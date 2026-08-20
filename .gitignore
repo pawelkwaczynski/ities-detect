@@ -1,0 +1,10 @@
+data/
+samples/
+wyniki_analizy/
+*.json
+*.csv
+*.pdf
+__pycache__/
+.ipynb_checkpoints/
+venv/
+.DS_Store
