@@ -8,7 +8,7 @@ Użycie:
     (domyślnie: ~/Desktop/ITIES_DETECT/odczyty_laboratoryjne)
 
 Co robi:
-    - wyciąga logikę analityczną z ITIES_Detect_Colab_MVP.ipynb (komórka kodu),
+    - wyciąga logikę analityczną z ITIES_Detect.ipynb (komórka kodu),
     - podmienia upload/rysowanie na tryb headless,
     - liczy rozkład statusów, wykrywa crashe,
     - sprawdza spójność detected ΔE_s i sygnalizuje wartości spoza zakresu.
@@ -20,7 +20,7 @@ import sys
 import types
 from collections import Counter
 
-NB = os.path.join(os.path.dirname(__file__), "ITIES_Detect_Colab_MVP.ipynb")
+NB = os.path.join(os.path.dirname(__file__), "ITIES_Detect.ipynb")
 DEFAULT_DIR = os.path.expanduser("~/Desktop/ITIES_DETECT/odczyty_laboratoryjne")
 DELTA_OK = (0.340, 0.360)   # szeroki zakres sanity dla detected ΔE_s
 
