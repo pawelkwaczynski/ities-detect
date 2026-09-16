@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PeakWise</title>
+  <link rel="icon" href="/assets/peakwise_icon_256.png" sizes="any">
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/ui.css">
+  <link rel="stylesheet" href="/peakwise/styles.css">
+</head>
+<body class="app-body">
+  <!--
+    THESIS: read one electrode's peaks in three seconds, and see how the current was read.
+    OWN-WORLD: the same macOS-like surface as ITIES Detect, shared tokens, no fake window chrome.
+    STORY: drop a folder of scans, the app analyses them, the card and the curve explain the number.
+    FIRST VIEWPORT: electrode list, toolbar, drop zone or result card with the voltammogram.
+    FORM: Operate.
+  -->
+  <div class="app">
+    <div class="sidebar-backdrop" id="backdrop" hidden></div>
+    <aside class="sidebar" id="sidebar" data-i18n-label="toolbar.list" aria-label="Files"></aside>
+    <div class="main">
+      <header class="toolbar">
+        <button type="button" class="drawer-toggle" id="drawer-btn" data-i18n="toolbar.list">List</button>
+        <button type="button" class="primary" id="btn-add" data-i18n="toolbar.add">Add files</button>
+        <button type="button" id="btn-add-folder" data-i18n="toolbar.addFolder">Add folder</button>
+        <input id="file-input" class="visually-hidden" type="file" accept=".txt,text/plain" multiple>
+        <input id="folder-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
+        <button type="button" id="btn-analyze" disabled data-i18n="toolbar.analyze">Analyse all</button>
+        <select id="algo-version" data-i18n-label="toolbar.algoVersion" aria-label="Algorithm version"></select>
+        <div class="seg" role="group" data-i18n-label="toolbar.viewFiles" aria-label="View">
+          <button type="button" id="view-files" aria-pressed="true" data-i18n="toolbar.viewFiles">Files</button>
+          <button type="button" id="view-table" aria-pressed="false" data-i18n="toolbar.viewTable">Table</button>
+        </div>
+        <div class="menu" id="export-menu">
+          <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false" data-i18n="toolbar.export">Export</button>
+          <div class="menu-list" role="menu">
+            <button type="button" role="menuitem" id="export-csv" data-i18n="toolbar.exportCsv">Session CSV</button>
+            <button type="button" role="menuitem" id="export-print" data-i18n="toolbar.exportPrint">Report (print)</button>
+          </div>
+        </div>
+        <label class="toolbar-field"><span data-i18n="toolbar.operator">Operator</span>
+          <input type="text" id="operator" size="12" autocomplete="name">
+        </label>
+        <span class="grow"></span>
+        <div class="seg" id="lang-switch" role="group" data-i18n-label="toolbar.language" aria-label="Language"></div>
+        <div class="engine-status" id="engine-status" aria-live="polite" data-i18n="engine.starting">Starting the engine</div>
+      </header>
+      <main class="content drop-target" id="content" tabindex="-1"></main>
+    </div>
+  </div>
+  <footer class="site-footer app-footer">
+    <a href="/" data-i18n="versions.hub">CV analysers</a>
+    <a href="/peakwise/versions.html" data-i18n="versions.title">Version history</a>
+    <span id="app-ver"></span>
+    <label><span data-i18n="toolbar.theme">Theme</span>
+      <select id="theme" data-i18n-label="toolbar.theme" aria-label="Theme">
+        <option value="system" data-i18n="theme.system">system</option>
+        <option value="light" data-i18n="theme.light">light</option>
+        <option value="dark" data-i18n="theme.dark">dark</option>
+      </select>
+    </label>
+  </footer>
+  <div id="print-root" hidden></div>
+  <div id="live-results" class="visually-hidden" aria-live="polite"></div>
+  <script type="module" src="/peakwise/app.js"></script>
+</body>
+</html>

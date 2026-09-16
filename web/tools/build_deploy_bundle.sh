@@ -2,7 +2,8 @@
 # Build the deployment package for the Frog VPS (Alpine 3.23, Python 3.12, user frog).
 #
 # Produces, in deploy/:
-#   analizatory_bundle.tar.gz   server/, algo/, static/ without static/pyodide/, README, RELEASE_CHECK
+#   analizatory_bundle.tar.gz   server/, algo/, static/ without static/pyodide/, README, both
+#                               RELEASE_CHECK files (ITIES Detect and PeakWise)
 #   fetch_pyodide_on_server.sh  runs ON the server: wget Pyodide, then gzip -k the parts that need it
 #   start.sh                    gunicorn watchdog with /home/frog/analizatory paths
 #   crontab.txt                 @reboot and */5 entries
@@ -206,7 +207,7 @@ tar -czf "$BUNDLE" \
   --exclude='static/pyodide' \
   --exclude='deploy/.pyodide_manifest' \
   --exclude='deploy/analizatory_bundle.tar.gz' \
-  server algo static README.md RELEASE_CHECK.md deploy
+  server algo static README.md RELEASE_CHECK.md RELEASE_CHECK_PEAKWISE.md deploy
 
 rm -f "$MANIFEST"
 

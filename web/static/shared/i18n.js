@@ -95,7 +95,6 @@ const EN = {
   "state.running": "computing…",
   "state.error": "error",
 
-  "sample.summary": "{count} of {total} {word}",
 
   "verdict.detected.word": "DETECTED",
   "verdict.detected.next":
@@ -345,7 +344,7 @@ const EN = {
   "common.no": "no",
 
   "app.changelog.1_2_0":
-    "2026-09-16: result screen rebuilt: file header with metadata, four KPI cards, a large annotated chart with zoom and full screen, a peaks panel, a folder and sample tree with status dots, and collapsible parameters, history and metadata.",
+    "2026-09-16: result screen rebuilt: file header with metadata, four KPI cards, a large annotated chart with zoom and full screen, a peaks panel, a folder and sample tree with status dots, and collapsible parameters, history and metadata. PeakWise 1.0 added to the hub.",
 };
 
 const PL = {
@@ -426,7 +425,6 @@ const PL = {
   "state.running": "liczę…",
   "state.error": "błąd",
 
-  "sample.summary": "{count} z {total} {word}",
 
   "verdict.detected.word": "WYKRYTO",
   "verdict.detected.next":
@@ -675,7 +673,7 @@ const PL = {
   "common.no": "nie",
 
   "app.changelog.1_2_0":
-    "2026-09-16: przebudowany ekran wyniku: nagłówek pliku z metadanymi, cztery karty KPI, duży opisany wykres z zoomem i pełnym ekranem, panel pików, drzewo folderów i próbek z kropkami statusu, zwijane parametry, historia i metadane.",
+    "2026-09-16: przebudowany ekran wyniku: nagłówek pliku z metadanymi, cztery karty KPI, duży opisany wykres z zoomem i pełnym ekranem, panel pików, drzewo folderów i próbek z kropkami statusu, zwijane parametry, historia i metadane. PeakWise 1.0 dodany do huba.",
 };
 
 const DICT = { en: EN, pl: PL };

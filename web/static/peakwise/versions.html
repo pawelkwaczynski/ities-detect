@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PeakWise, version history</title>
+  <link rel="icon" href="/assets/peakwise_icon_256.png" sizes="any">
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/ui.css">
+  <link rel="stylesheet" href="/peakwise/styles.css">
+</head>
+<body>
+  <main class="versions-page">
+    <h1 data-i18n="versions.title">Version history</h1>
+    <p class="muted" data-i18n="app.tagline"></p>
+    <h2 data-i18n="versions.algo">Algorithm versions</h2>
+    <div id="algo-table"></div>
+    <h2 data-i18n="versions.app">App versions</h2>
+    <div id="app-table"></div>
+  </main>
+  <footer class="site-footer">
+    <a href="/peakwise/" data-i18n="versions.back">Back to PeakWise</a>
+    <a href="/" data-i18n="versions.hub">CV analysers</a>
+    <div class="seg" id="lang-switch" role="group" aria-label="Language"></div>
+    <label><span data-i18n="toolbar.theme">Theme</span>
+      <select id="theme" aria-label="Theme">
+        <option value="system" data-i18n="theme.system">system</option>
+        <option value="light" data-i18n="theme.light">light</option>
+        <option value="dark" data-i18n="theme.dark">dark</option>
+      </select>
+    </label>
+  </footer>
+  <script type="module">
+    import { applyStaticText, getLang, initLang, LANGUAGES, setLang, t } from "/peakwise/ui/i18n.js";
+    import { APP_VERSION, APP_CHANGELOG } from "/peakwise/ui/app_version.js";
+    import { fmtNum, shaShort } from "/peakwise/ui/format.js";
+
+    const THEME_KEY = "ities-theme";
+    let manifest = [];
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+
+    function measuredCell(m) {
+      const wrap = el("div");
+      if (!m) return wrap;
+      wrap.appendChild(el("div", null, t("versions.against") + " " + m.reference));
+      for (const [label, k] of [["Ip a", "Ip_a"], ["Ip c", "Ip_c"]]) {
+        const v = m[k];
+        if (!v) continue;
+        wrap.appendChild(
+          el("div", "tabular",
+            `${label}: ${t("versions.meanError")} ${fmtNum(v.mean_error_pct, 1)} %, ` +
+            `n = ${v.n_computed} / ${v.n_reference}`)
+        );
+      }
+      const note = getLang() === "pl" ? (m.note_pl || m.note) : m.note;
+      if (note) wrap.appendChild(el("div", "muted", note));
+      if (m.date) wrap.appendChild(el("div", "muted", m.date));
+      return wrap;
+    }
+
+    function renderAlgo() {
+      const host = document.getElementById("algo-table");
+      host.innerHTML = "";
+      const table = el("table");
+      const head = el("tr");
+      for (const k of ["versions.version", "versions.date", "versions.sha", "versions.changes", "versions.measured"]) {
+        head.appendChild(el("th", null, t(k)));
+      }
+      const thead = el("thead");
+      thead.appendChild(head);
+      table.appendChild(thead);
+      const body = el("tbody");
+      for (const entry of manifest) {
+        const tr = el("tr");
+        tr.appendChild(el("td", null, entry.version + (entry.default ? " *" : "")));
+        const date = el("td");
+        date.appendChild(el("div", null, entry.date || ""));
+        if (entry.notebook_state) {
+          date.appendChild(el("div", "muted", t("versions.notebookState", { d: entry.notebook_state })));
+        }
+        tr.appendChild(date);
+        const sha = el("td", "sha", shaShort(entry.sha256));
+        sha.title = entry.sha256;
+        tr.appendChild(sha);
+        const changes = el("td");
+        const ul = el("ul");
+        const list = getLang() === "pl" ? entry.changelog : (entry.changelog_en?.length ? entry.changelog_en : entry.changelog);
+        for (const line of list || []) ul.appendChild(el("li", null, line));
+        changes.appendChild(ul);
+        tr.appendChild(changes);
+        const measured = el("td");
+        measured.appendChild(measuredCell(entry.measured));
+        const use = el("a", "use-ver", t("versions.use"));
+        use.href = "/peakwise/?algo=" + encodeURIComponent(entry.version);
+        measured.appendChild(use);
+        tr.appendChild(measured);
+        body.appendChild(tr);
+      }
+      table.appendChild(body);
+      host.appendChild(table);
+    }
+
+    function renderApp() {
+      const host = document.getElementById("app-table");
+      host.innerHTML = "";
+      const table = el("table");
+      const head = el("tr");
+      for (const k of ["versions.version", "versions.date", "versions.changes"]) {
+        head.appendChild(el("th", null, t(k)));
+      }
+      const thead = el("thead");
+      thead.appendChild(head);
+      table.appendChild(thead);
+      const body = el("tbody");
+      for (const entry of APP_CHANGELOG) {
+        const tr = el("tr");
+        tr.appendChild(el("td", null, entry.version + (entry.version === APP_VERSION ? " *" : "")));
+        tr.appendChild(el("td", null, entry.date));
+        const changes = el("td");
+        const ul = el("ul");
+        for (const line of getLang() === "pl" ? entry.pl : entry.en) ul.appendChild(el("li", null, line));
+        changes.appendChild(ul);
+        tr.appendChild(changes);
+        body.appendChild(tr);
+      }
+      table.appendChild(body);
+      host.appendChild(table);
+    }
+
+    function renderAll() {
+      applyStaticText();
+      renderAlgo();
+      renderApp();
+      for (const b of document.querySelectorAll("#lang-switch button")) {
+        b.setAttribute("aria-pressed", String(b.dataset.lang === getLang()));
+      }
+    }
+
+    initLang();
+    const langHost = document.getElementById("lang-switch");
+    for (const { code, label } of LANGUAGES) {
+      const b = el("button", null, label);
+      b.type = "button";
+      b.dataset.lang = code;
+      b.addEventListener("click", () => {
+        setLang(code);
+        renderAll();
+      });
+      langHost.appendChild(b);
+    }
+
+    const theme = document.getElementById("theme");
+    let saved = "system";
+    try { saved = localStorage.getItem(THEME_KEY) || "system"; } catch (_) { /* default */ }
+    const applyTheme = (v) => {
+      if (v === "system") document.documentElement.removeAttribute("data-theme");
+      else document.documentElement.setAttribute("data-theme", v);
+      try { localStorage.setItem(THEME_KEY, v); } catch (_) { /* not stored */ }
+    };
+    theme.value = saved;
+    applyTheme(saved);
+    theme.addEventListener("change", () => applyTheme(theme.value));
+
+    try {
+      const res = await fetch("/algo/peakwise_versions.json", { cache: "no-store" });
+      manifest = await res.json();
+    } catch (_) {
+      manifest = [];
+    }
+    renderAll();
+  </script>
+</body>
+</html>

@@ -269,6 +269,9 @@ async function main() {
     await setPrefs(cdp, "pl", "light");
     await reload(cdp);
     await waitExpr(cdp, HAS_VERDICT, 180000);
+    // The thresholds only exist once the worker reports them, so wait for the engine
+    // before shooting a screen that displays them.
+    await waitExpr(cdp, ENGINE_READY, 180000);
     await evaluate(cdp, "document.getElementById('view-table').click();true");
     await sleep(500);
     await shot(cdp, "ities-table-desktop-pl.png");
@@ -433,6 +436,10 @@ async function main() {
     await sleep(300);
     await shot(cdp, "ities-empty-mobile-pl.png");
     await loadThreeFiles(cdp);
+    // On a narrow screen the drawer opens itself after an upload; close it so the shot
+    // shows the result rather than the list that was just filled.
+    await evaluate(cdp, "document.getElementById('backdrop').click();true");
+    await sleep(400);
     await shot(cdp, "ities-result-mobile-pl-light.png");
     await setPrefs(cdp, "en", "dark");
     await reload(cdp);
@@ -448,6 +455,8 @@ async function main() {
   } finally {
     kill();
     await sleep(300);
+    // The 45 staged copies are lab data; they exist only for the run.
+    fs.rmSync(FOLDER_STAGE, { recursive: true, force: true });
   }
   console.log("\n" + report.join("\n"));
 }

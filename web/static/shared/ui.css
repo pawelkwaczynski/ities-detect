@@ -15,6 +15,28 @@ button, input, select, textarea {
   color: inherit;
 }
 
+/* A native select keeps the system light chrome in dark mode, so it gets the same
+   surface as the buttons next to it. */
+select {
+  appearance: none;
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  height: var(--control-h);
+  padding: 0 28px 0 10px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 15px) calc(50% + 1px), calc(100% - 10px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+input[type="text"], input[type="search"], textarea {
+  background: var(--bg-input);
+  color: var(--text);
+}
+
 button {
   appearance: none;
   border: 0;

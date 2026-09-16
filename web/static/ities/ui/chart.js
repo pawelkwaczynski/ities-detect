@@ -28,7 +28,7 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
-export function palette() {
+function palette() {
   return {
     fwd: cssVar("--fwd", "#64748B"),
     bwd: cssVar("--bwd", "#7C9A86"),
@@ -44,7 +44,7 @@ export function palette() {
   };
 }
 
-export function chartHeight(width) {
+function chartHeight(width) {
   return Math.round(Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, width / ASPECT)));
 }
 
@@ -74,7 +74,7 @@ export function pointI(result, key) {
 
 // E5 and E6 are the branch midpoints. On the raw axis the algorithm does not report
 // them, so they are rebuilt from the raw point pair rather than left out.
-export function midE(result, key, calibrated) {
+function midE(result, key, calibrated) {
   if (calibrated) return result["E" + key] ?? null;
   const pair = key === "5" ? ["1", "2"] : ["3", "4"];
   const a = pointE(result, pair[0], false);

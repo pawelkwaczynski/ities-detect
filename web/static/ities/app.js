@@ -828,6 +828,9 @@ async function boot() {
       readyStatus();
       fillVersionSelect();
       updateToolbar();
+      // A restored session paints before the worker reports its constants, so the
+      // thresholds on screen would stay empty without this repaint.
+      renderContent();
       pump();
     }
     if (ev.type === "error" && ev.id == null) showEngineError(ev);

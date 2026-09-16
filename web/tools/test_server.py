@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mini checks for MIME, /api/versions and precompressed .br."""
+"""Mini checks for MIME, the version manifests, precompressed .br and both app routes."""
 from __future__ import annotations
 
 import sys
@@ -40,15 +40,58 @@ def main() -> int:
     else:
         print("wasm br Content-Encoding:", enc)
 
+    # Since round 3 the Polish strings live in shared/i18n.js, not in the markup, so the
+    # hub is checked on its structure and the dictionary is checked on its keys.
     hub = c.get("/")
-    if hub.status_code != 200 or b"Analizatory CV" not in hub.data:
-        fails.append("hub page")
+    if hub.status_code != 200 or b'data-i18n="hub.title"' not in hub.data:
+        fails.append(f"hub page status {hub.status_code}")
+    i18n = c.get("/shared/i18n.js")
+    if i18n.status_code != 200:
+        fails.append(f"/shared/i18n.js status {i18n.status_code}")
+    else:
+        for key in (b'"hub.title"', b'"hub.ities.desc"', b'"hub.peakwise.desc"'):
+            if i18n.data.count(key) != 2:
+                fails.append(f"i18n key {key.decode()} not present in both languages")
     ities = c.get("/ities/")
     if ities.status_code != 200 or b"ITIES Detect" not in ities.data:
         fails.append("ities page")
     algo = c.get("/algo/ities_algo_v1.1.py")
     if algo.status_code != 200 or algo.headers.get("Cache-Control") != "no-cache":
         fails.append("algo cache")
+
+    peakwise = c.get("/peakwise/")
+    if peakwise.status_code != 200 or b"PeakWise" not in peakwise.data:
+        fails.append(f"/peakwise/ status {peakwise.status_code}")
+    else:
+        print("/peakwise/ served, bytes:", len(peakwise.data))
+
+    # The hub tile links /peakwise/, so a trailing-slash redirect would be a broken tile.
+    pw_asset = c.get("/peakwise/app.js")
+    if pw_asset.status_code != 200 or pw_asset.headers.get("Cache-Control") != "no-cache":
+        fails.append(f"/peakwise/app.js status {pw_asset.status_code} cache {pw_asset.headers.get('Cache-Control')!r}")
+
+    pwv = c.get("/algo/peakwise_versions.json")
+    if pwv.status_code != 200:
+        fails.append(f"/algo/peakwise_versions.json status {pwv.status_code}")
+    elif "application/json" not in pwv.headers.get("Content-Type", ""):
+        fails.append(f"peakwise manifest MIME {pwv.headers.get('Content-Type')!r}")
+    else:
+        data = pwv.get_json()
+        defaults = [e for e in data if e.get("default")] if isinstance(data, list) else []
+        if len(defaults) != 1:
+            fails.append("peakwise manifest needs exactly one default entry")
+        else:
+            entry = defaults[0]
+            print("peakwise default:", entry["version"], entry["file"])
+            algo_pw = c.get("/algo/" + entry["file"])
+            if algo_pw.status_code != 200:
+                fails.append(f"/algo/{entry['file']} status {algo_pw.status_code}")
+
+    # The hub tile must point somewhere that answers, and must not say "soon" any more.
+    if b'href="/peakwise/"' not in hub.data:
+        fails.append("hub tile does not link /peakwise/")
+    if b'hub.soon' in hub.data:
+        fails.append("hub still shows the 'soon' badge")
 
     if fails:
         print("FAIL")

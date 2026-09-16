@@ -37,18 +37,19 @@
           <button type="button" id="view-files" aria-pressed="true" data-i18n="toolbar.viewFiles">Files</button>
           <button type="button" id="view-table" aria-pressed="false" data-i18n="toolbar.viewTable">Table</button>
         </div>
-        <span class="grow"></span>
-        <div class="toolbar-prefs" id="app-prefs"></div>
-        <label class="switch" id="expert-switch">
-          <input type="checkbox" id="expert-mode">
-          <span class="switch-track"></span>
-          <span data-i18n="toolbar.expert">Expert mode</span>
-        </label>
-        <div class="menu" id="export-menu">
-          <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false" data-i18n="toolbar.export">Export</button>
-          <div class="menu-list" role="menu">
-            <button type="button" role="menuitem" id="export-csv" data-i18n="toolbar.exportCsv">Session CSV</button>
-            <button type="button" role="menuitem" id="export-pdf" data-i18n="toolbar.exportPdf">PDF report (print)</button>
+        <div class="toolbar-right">
+          <div class="toolbar-prefs" id="app-prefs"></div>
+          <label class="switch" id="expert-switch">
+            <input type="checkbox" id="expert-mode">
+            <span class="switch-track"></span>
+            <span data-i18n="toolbar.expert">Expert mode</span>
+          </label>
+          <div class="menu" id="export-menu">
+            <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false" data-i18n="toolbar.export">Export</button>
+            <div class="menu-list" role="menu">
+              <button type="button" role="menuitem" id="export-csv" data-i18n="toolbar.exportCsv">Session CSV</button>
+              <button type="button" role="menuitem" id="export-pdf" data-i18n="toolbar.exportPdf">PDF report (print)</button>
+            </div>
           </div>
         </div>
       </header>

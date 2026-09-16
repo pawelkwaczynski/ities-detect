@@ -4,17 +4,17 @@ Parity test of the frozen algorithm in Pyodide (Node) against the CPython baseli
 
 ## Environment
 
-- date: 2026-09-16T20:43:28.444Z
+- date: 2026-09-16T21:29:14.795Z
 - pyodide: 314.0.7
 - python (wasm): 3.14.2
 - numpy 2.4.6, scipy 1.18.0, pandas 3.0.2
 - algo 1.1  sha256 c0e29b1e799c8fba75a4375cc57ee644866bce96af97df941c79cce5ed118361
 - files on disk: 485
 - baseline rows: 485
-- load pyodide: 0.85 s
-- load packages: 0.89 s
-- analyze wall: 58.80 s
-- rss end: 1169.4 MB
+- load pyodide: 0.83 s
+- load packages: 0.90 s
+- analyze wall: 56.66 s
+- rss end: 1224.7 MB
 
 ## Gate: 0 differences on status, delta_Es, Ip_analyte_fwd_uA (tol 1e-9)
 
@@ -29,7 +29,7 @@ PASS: Pyodide matches CPython on all compared files.
 
 - files re-analysed: 200
 - differences vs baseline: **27**
-- wall: 21.91 s
+- wall: 21.02 s
 PASS: the parity test reports differences when the threshold is wrong. The test can fail.
 
 ## Verdict

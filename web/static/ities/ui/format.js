@@ -2,7 +2,7 @@ import { locale, t } from "/shared/i18n.js";
 
 // Status codes come from the frozen algorithm. Tone and the "has a deviation scale"
 // flag are UI facts; every word shown to a human comes from the i18n dictionary.
-export const STATUS_TONES = {
+const STATUS_TONES = {
   detected: { tone: "detected", hasDelta: true },
   uncertain: { tone: "uncertain", hasDelta: true },
   not_detected: { tone: "not_detected", hasDelta: true },
@@ -91,14 +91,6 @@ export function sampleAggregate(files) {
   return null;
 }
 
-export function sampleSummary(files) {
-  const total = files.length;
-  const agg = sampleAggregate(files);
-  const info = verdictInfo(agg || "invalid");
-  const count = files.filter((f) => displayResult(f)?.status === agg).length;
-  return t("sample.summary", { count, total, word: info.word });
-}
-
 // Counts per verdict bucket, used for the folder roll-up in the sidebar.
 export function bucketCounts(files) {
   const out = { detected: 0, uncertain: 0, not_detected: 0, unsuitable: 0, pending: 0 };
@@ -128,15 +120,6 @@ export function matchesFilter(file, filter) {
 export function shaShort(hex) {
   if (!hex) return "";
   return hex.slice(0, 8) + "..." + hex.slice(-4);
-}
-
-export function formatTime(iso) {
-  if (!iso) return "";
-  return new Date(iso).toLocaleString(locale(), {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
 }
 
 export function aggregationRule() {

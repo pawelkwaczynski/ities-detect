@@ -11,7 +11,7 @@
   <!--
     THESIS: two lab tools as home-screen icons, not a marketing grid.
     OWN-WORLD: macOS-like system chrome, SF stack, hairlines, 22% icon corners.
-    STORY: pick ITIES Detect or see PeakWise as coming soon.
+    STORY: pick ITIES Detect or PeakWise, both live.
     FIRST VIEWPORT: language and theme controls, title, one sentence, two 128px tiles.
     FORM: Operate, pinned by SPEC_APLIKACJI.md.
     FINISH: unreviewed and undocumented is unfinished.
@@ -32,16 +32,16 @@
           <p data-i18n="hub.ities.desc">Amphetamine detection from CV curves (ITIES).</p>
           <span class="hub-badge" id="ities-ver">v1.1</span>
         </a>
-        <div class="hub-tile is-soon" aria-disabled="true">
+        <a class="hub-tile" href="/peakwise/">
           <div class="hub-icon">
             <img src="/assets/peakwise_icon_256.png"
                  srcset="/assets/peakwise_icon_256.png 256w, /assets/peakwise_icon_512.png 512w"
-                 sizes="128px" width="128" height="128" alt="" aria-hidden="true">
+                 sizes="128px" width="128" height="128" alt="PeakWise">
           </div>
           <h2 id="tile2-name">PeakWise</h2>
           <p data-i18n="hub.peakwise.desc">Anodic and cathodic peaks of 3D printed electrodes.</p>
-          <span class="hub-badge" data-i18n="hub.soon">soon</span>
-        </div>
+          <span class="hub-badge" id="peakwise-ver">v1.0</span>
+        </a>
       </div>
     </main>
     <footer class="site-footer">
@@ -59,6 +59,11 @@
     fetch("/api/versions").then((r) => r.json()).then((list) => {
       const d = list.find((e) => e.default) || list[0];
       if (d) document.getElementById("ities-ver").textContent = "v" + d.version;
+    }).catch(() => {});
+
+    fetch("/algo/peakwise_versions.json").then((r) => r.json()).then((list) => {
+      const d = list.find((e) => e.default) || list[0];
+      if (d) document.getElementById("peakwise-ver").textContent = "v" + d.version;
     }).catch(() => {});
   </script>
 </body>

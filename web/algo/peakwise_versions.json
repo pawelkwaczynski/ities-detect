@@ -1,0 +1,45 @@
+[
+  {
+    "version": "1.0",
+    "date": "2026-09-16",
+    "file": "peakwise_algo_v1.0.py",
+    "sha256": "2d021d6e1ded7b9822acb984c25cb8ca41242fe9ed937069d49378adf9b47eed",
+    "size_bytes": 44535,
+    "notebook_cell_sha256": "9c0340708dcb31efac22c39a8fb5ccfb6ad9e73dbc37d66dc35de81ca48cb954",
+    "notebook_state": "2026-08-23",
+    "default": true,
+    "changelog": [
+      "pierwsze zamrożenie komórki SETUP notebooka (stan 23.08.2026)",
+      "ostatni cykl z pliku, bazowa MNK po [onset-0,35; onset-0,05] V",
+      "Ip trzema odczytami: maksimum, krzywa przy przecięciu stycznych, styczne",
+      "fallback plateau dla piku katodowego bez lokalnego minimum"
+    ],
+    "changelog_en": [
+      "first freeze of the notebook SETUP cell (state of 2026-08-23)",
+      "last cycle of the file, baseline least squares over [onset-0.35; onset-0.05] V",
+      "Ip from three readings: maximum, curve at tangent intersection, tangents",
+      "plateau fallback for a cathodic peak with no local minimum"
+    ],
+    "measured": {
+      "reference": "FDM SPE EXPERIMENTS (1).xlsx, last scan of each electrode",
+      "n_electrodes_in_table": 45,
+      "Ip_a": {
+        "mean_error_pct": 1.1,
+        "median_error_pct": 0.7,
+        "n_reference": 45,
+        "n_computed": 45,
+        "n_no_result": 0
+      },
+      "Ip_c": {
+        "mean_error_pct": 3.2,
+        "median_error_pct": 1.2,
+        "n_reference": 43,
+        "n_computed": 43,
+        "n_no_result": 0
+      },
+      "note": "Ip_c gives 2.8 % on n=42, the figure from 2026-08-20, when the electrode '2 mm b' had no cathodic peak at all. The plateau fallback added on 2026-08-23 measures it, so the denominator grew by one and the mean rose.",
+      "note_pl": "Ip_c daje 2,8 % przy n=42, czyli liczbę z 20.08.2026, gdy elektroda '2 mm b' w ogóle nie miała piku katodowego. Fallback plateau dodany 23.08.2026 ją mierzy, więc mianownik urósł o jeden i średnia poszła w górę.",
+      "date": "2026-09-16"
+    }
+  }
+]

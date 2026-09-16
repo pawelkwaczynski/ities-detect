@@ -4,6 +4,7 @@ wyniki_analizy/
 *.json
 !kalibracja_amfetamina.json
 !web/algo/versions.json
+!web/algo/peakwise_versions.json
 !web/tools/package.json
 !web/tools/package-lock.json
 *.csv

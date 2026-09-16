@@ -1,4 +1,4 @@
-"""Static host plus /api/versions for ITIES Detect."""
+"""Static host for the CV Analysers hub: ITIES Detect, PeakWise, plus /api/versions."""
 from __future__ import annotations
 
 import json
@@ -76,12 +76,18 @@ def ities_index():
     return send_precompressed(STATIC / "ities" / "index.html", cache="no-cache")
 
 
+@app.get("/peakwise/")
+def peakwise_index():
+    return send_precompressed(STATIC / "peakwise" / "index.html", cache="no-cache")
+
+
 @app.get("/algo/<path:name>")
 def algo_file(name: str):
     path = (ALGO / name).resolve()
     if not str(path).startswith(str(ALGO.resolve())) or not path.is_file():
         return Response("Not found", status=404)
-    resp = send_file(path, mimetype="text/plain; charset=utf-8")
+    mime = "application/json" if path.suffix == ".json" else "text/plain"
+    resp = send_file(path, mimetype=mime)
     resp.headers["Cache-Control"] = "no-cache"
     return resp
 
