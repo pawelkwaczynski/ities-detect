@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ITIES Detect</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/ui.css">
+  <link rel="stylesheet" href="/ities/styles.css">
+</head>
+<body class="app-body">
+  <!--
+    THESIS: a lab operate surface: who this file is, the numbers that decide, the curve,
+            the peaks behind it. Not a dashboard of metrics.
+    OWN-WORLD: macOS-like panels, system font, hairlines, no fake window lights.
+    STORY: drop files or a folder, the tree fills and computes itself, the result screen
+           answers in three seconds and keeps the full record folded underneath.
+    FIRST VIEWPORT: sample tree, toolbar, file header, four KPI cards, the voltammogram.
+    FORM: Operate, pinned by SPEC_APLIKACJI.md and the round 3 brief.
+    FINISH: unreviewed and undocumented is unfinished.
+  -->
+  <div class="app">
+    <div class="sidebar-backdrop" id="backdrop" hidden></div>
+    <aside class="sidebar" id="sidebar" data-i18n-aria="sidebar.label" aria-label="File list"></aside>
+    <div class="main">
+      <header class="toolbar">
+        <button type="button" class="drawer-toggle" id="drawer-btn" data-i18n="toolbar.list" data-i18n-aria="sidebar.label">List</button>
+        <button type="button" class="primary" id="btn-add" data-i18n="toolbar.import">Import measurements</button>
+        <button type="button" id="btn-add-folder" data-i18n="toolbar.addFolder">Add folder</button>
+        <input id="file-input" class="visually-hidden" type="file" accept=".txt,text/plain" multiple>
+        <input id="folder-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
+        <button type="button" id="btn-analyze" data-i18n="toolbar.analyseSeries" disabled>Analyse series</button>
+        <span class="file-count" id="file-count" hidden></span>
+        <label class="visually-hidden" for="algo-version" data-i18n="toolbar.algoVersionLabel">Algorithm version</label>
+        <select id="algo-version" data-i18n-aria="toolbar.algoVersionLabel" aria-label="Algorithm version"></select>
+        <div class="seg" id="view-seg" role="group" data-i18n-aria="toolbar.view" aria-label="View">
+          <button type="button" id="view-files" aria-pressed="true" data-i18n="toolbar.viewFiles">Files</button>
+          <button type="button" id="view-table" aria-pressed="false" data-i18n="toolbar.viewTable">Table</button>
+        </div>
+        <span class="grow"></span>
+        <div class="toolbar-prefs" id="app-prefs"></div>
+        <label class="switch" id="expert-switch">
+          <input type="checkbox" id="expert-mode">
+          <span class="switch-track"></span>
+          <span data-i18n="toolbar.expert">Expert mode</span>
+        </label>
+        <div class="menu" id="export-menu">
+          <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false" data-i18n="toolbar.export">Export</button>
+          <div class="menu-list" role="menu">
+            <button type="button" role="menuitem" id="export-csv" data-i18n="toolbar.exportCsv">Session CSV</button>
+            <button type="button" role="menuitem" id="export-pdf" data-i18n="toolbar.exportPdf">PDF report (print)</button>
+          </div>
+        </div>
+      </header>
+      <main class="content drop-target" id="content" tabindex="-1"></main>
+      <footer class="status-bar">
+        <span class="status-left">
+          <span class="status-dot" id="status-dot"></span>
+          <span class="engine-status" id="engine-status" aria-live="polite">Starting the engine</span>
+          <span class="status-sep" aria-hidden="true">·</span>
+          <span id="analysis-status" class="muted"></span>
+        </span>
+        <span class="status-right">
+          <label class="operator"><span data-i18n="toolbar.operator">Operator</span> <input type="text" id="operator" size="10" autocomplete="name"></label>
+          <a href="/ities/versions.html" data-i18n="common.versions">Version history</a>
+          <span id="app-ver" class="muted"></span>
+        </span>
+      </footer>
+    </div>
+  </div>
+  <div id="print-root" hidden></div>
+  <div id="live-results" class="visually-hidden" aria-live="polite"></div>
+  <script type="module" src="/ities/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+[
+  {
+    "version": "1.1",
+    "date": "2026-09-16",
+    "file": "ities_algo_v1.1.py",
+    "sha256": "c0e29b1e799c8fba75a4375cc57ee644866bce96af97df941c79cce5ed118361",
+    "size_bytes": 62822,
+    "notebook_cell_sha256": "f987de43c21bafe6a16159f0a60f960d04eb5977f0cee0065e932a209b4525bf",
+    "default": true,
+    "changelog": [
+      "LOD/LOQ z aktywnej kalibracji + ostrzeżenie below_lod",
+      "diagnostyka wyboru pary (n_par_sanity, second_best_error_mV)"
+    ],
+    "measured": {
+      "positives_detected": "121/293",
+      "false_positives_negatives": "0/147",
+      "false_positives_neutrals": "0/45",
+      "date": "2026-09-16"
+    }
+  },
+  {
+    "version": "1.0",
+    "date": "2026-08-20",
+    "file": "ities_algo_v1.0.py",
+    "sha256": "21119730486497ea19c595e1b8dca1d937357318a67c4facbdbd6438f056176b",
+    "size_bytes": 61290,
+    "notebook_cell_sha256": "6441a50259121dce44786f0e9554b3b934a068072b1642e781bfab24ba8330d2",
+    "default": false,
+    "changelog": [
+      "stan notebooka z 20.08.2026: Ip dwiema procedurami (maksimum nad linią bazową, przecięcie stycznych)"
+    ],
+    "measured": {
+      "positives_detected": "121/293",
+      "false_positives_negatives": "0/147",
+      "false_positives_neutrals": "0/45",
+      "date": "2026-09-16"
+    }
+  }
+]

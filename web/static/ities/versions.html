@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n-doc="versions.pageTitle">Version history · ITIES Detect</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/ui.css">
+  <link rel="stylesheet" href="/ities/styles.css">
+</head>
+<body>
+  <main class="versions-page">
+    <div class="versions-bar">
+      <p class="versions-crumbs">
+        <a href="/" data-i18n="common.analysers">CV Analysers</a> ·
+        <a href="/ities/" data-i18n="common.ities">ITIES Detect</a>
+      </p>
+      <div id="versions-prefs" class="toolbar-prefs"></div>
+    </div>
+    <h1 data-i18n="versions.h1">Version history</h1>
+    <h2 data-i18n="versions.algo">Algorithm</h2>
+    <p class="muted" data-i18n="versions.note"></p>
+    <p class="version-diff" data-i18n="versions.diff"></p>
+    <table id="algo-table">
+      <thead>
+        <tr>
+          <th data-i18n="versions.col.version">Version</th>
+          <th data-i18n="versions.col.date">Date</th>
+          <th data-i18n="versions.col.sha">SHA-256</th>
+          <th data-i18n="versions.col.changes">Changes</th>
+          <th data-i18n="versions.col.measured">Measured</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h2 data-i18n="versions.app">Application</h2>
+    <p id="app-ver-line"></p>
+    <ul id="app-changes"></ul>
+    <footer class="site-footer">
+      <span data-i18n="common.year">2026</span>
+    </footer>
+  </main>
+  <script type="module">
+    import { applyStatic, onLangChange, t } from "/shared/i18n.js";
+    import { mountPrefs } from "/shared/prefs.js";
+    import { APP_VERSION, APP_CHANGELOG_KEYS } from "/ities/app.js";
+    import { shaShort } from "/ities/ui/format.js";
+
+    // The changelog lives in algo/versions.json in the lab's Polish. The dictionary
+    // carries the translation, keyed by version, and falls back to the manifest text.
+    const CHANGELOG_KEYS = {
+      "1.1": ["algo.changelog.1_1.lod", "algo.changelog.1_1.pair"],
+      "1.0": ["algo.changelog.1_0.notebook"],
+    };
+
+    let manifest = [];
+
+    function renderApp() {
+      document.getElementById("app-ver-line").textContent =
+        t("versions.appLine", { version: APP_VERSION });
+      const ul = document.getElementById("app-changes");
+      ul.innerHTML = "";
+      for (const key of APP_CHANGELOG_KEYS) {
+        const li = document.createElement("li");
+        li.textContent = t(key);
+        ul.appendChild(li);
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.querySelector("#algo-table tbody");
+      tbody.innerHTML = "";
+      for (const e of manifest) {
+        const tr = document.createElement("tr");
+        const measured = e.measured
+          ? t("versions.measured", {
+              positives: e.measured.positives_detected,
+              negatives: e.measured.false_positives_negatives,
+              neutrals: e.measured.false_positives_neutrals,
+              date: e.measured.date,
+            })
+          : "";
+        const version = document.createElement("td");
+        version.textContent = e.version + (e.default ? " " + t("versions.default") : "");
+        const date = document.createElement("td");
+        date.textContent = e.date || "";
+        const sha = document.createElement("td");
+        sha.className = "tabular";
+        sha.title = e.sha256;
+        sha.textContent = shaShort(e.sha256);
+        const changes = document.createElement("td");
+        const list = document.createElement("ul");
+        const keys = CHANGELOG_KEYS[e.version];
+        const lines = keys ? keys.map((k) => t(k)) : (e.changelog || []);
+        for (const line of lines) {
+          const li = document.createElement("li");
+          li.textContent = line;
+          list.appendChild(li);
+        }
+        changes.appendChild(list);
+        const measuredCell = document.createElement("td");
+        measuredCell.textContent = measured;
+        const action = document.createElement("td");
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "use-ver";
+        button.textContent = t("versions.use");
+        button.addEventListener("click", () => {
+          location.href = "/ities/?algo=" + encodeURIComponent(e.version);
+        });
+        action.appendChild(button);
+        tr.append(version, date, sha, changes, measuredCell, action);
+        tbody.appendChild(tr);
+      }
+    }
+
+    mountPrefs(document.getElementById("versions-prefs"));
+    applyStatic(document);
+    onLangChange(() => {
+      renderApp();
+      renderTable();
+    });
+    renderApp();
+
+    manifest = await fetch("/api/versions").then((r) => r.json()).catch(() => []);
+    renderTable();
+  </script>
+</body>
+</html>

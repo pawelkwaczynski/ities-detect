@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-i18n-doc="hub.pageTitle">CV Analysers</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/ui.css">
+</head>
+<body>
+  <!--
+    THESIS: two lab tools as home-screen icons, not a marketing grid.
+    OWN-WORLD: macOS-like system chrome, SF stack, hairlines, 22% icon corners.
+    STORY: pick ITIES Detect or see PeakWise as coming soon.
+    FIRST VIEWPORT: language and theme controls, title, one sentence, two 128px tiles.
+    FORM: Operate, pinned by SPEC_APLIKACJI.md.
+    FINISH: unreviewed and undocumented is unfinished.
+  -->
+  <div class="hub">
+    <div class="hub-bar" id="hub-prefs"></div>
+    <main class="hub-main">
+      <h1 data-i18n="hub.title">CV Analysers</h1>
+      <p class="hub-lead" data-i18n="hub.lead">Laboratory tools for cyclic voltammetry analysis.</p>
+      <div class="hub-tiles">
+        <a class="hub-tile" href="/ities/">
+          <div class="hub-icon">
+            <img src="/assets/ities_icon_256.png"
+                 srcset="/assets/ities_icon_256.png 256w, /assets/ities_icon_512.png 512w"
+                 sizes="128px" width="128" height="128" alt="ITIES Detect">
+          </div>
+          <h2>ITIES Detect</h2>
+          <p data-i18n="hub.ities.desc">Amphetamine detection from CV curves (ITIES).</p>
+          <span class="hub-badge" id="ities-ver">v1.1</span>
+        </a>
+        <div class="hub-tile is-soon" aria-disabled="true">
+          <div class="hub-icon">
+            <img src="/assets/peakwise_icon_256.png"
+                 srcset="/assets/peakwise_icon_256.png 256w, /assets/peakwise_icon_512.png 512w"
+                 sizes="128px" width="128" height="128" alt="" aria-hidden="true">
+          </div>
+          <h2 id="tile2-name">PeakWise</h2>
+          <p data-i18n="hub.peakwise.desc">Anodic and cathodic peaks of 3D printed electrodes.</p>
+          <span class="hub-badge" data-i18n="hub.soon">soon</span>
+        </div>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <a href="/ities/versions.html" data-i18n="common.versions">Version history</a>
+      <span data-i18n="common.year">2026</span>
+    </footer>
+  </div>
+  <script type="module">
+    import { HUB_TILE_2_NAME } from "/shared/config.js";
+    import { mountPrefs } from "/shared/prefs.js";
+
+    document.getElementById("tile2-name").textContent = HUB_TILE_2_NAME;
+    mountPrefs(document.getElementById("hub-prefs"));
+
+    fetch("/api/versions").then((r) => r.json()).then((list) => {
+      const d = list.find((e) => e.default) || list[0];
+      if (d) document.getElementById("ities-ver").textContent = "v" + d.version;
+    }).catch(() => {});
+  </script>
+</body>
+</html>

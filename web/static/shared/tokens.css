@@ -1,0 +1,158 @@
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --text-ui: 13px;
+  --text-body: 15px;
+  --text-verdict: 32px;
+  --line-ui: 1.35;
+  --line-body: 1.45;
+  --accent: #007AFF;
+  --accent-hover: #0066d6;
+  --focus: #0A84FF;
+  --bg: #F5F5F7;
+  --bg-sidebar: rgba(246, 246, 248, 0.78);
+  --bg-sidebar-solid: #F2F2F4;
+  --bg-card: #ffffff;
+  --bg-toolbar: rgba(255, 255, 255, 0.72);
+  --bg-hover: rgba(0, 0, 0, 0.05);
+  --bg-active: rgba(0, 122, 255, 0.12);
+  --bg-input: rgba(0, 0, 0, 0.05);
+  --text: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-inverse: #ffffff;
+  --hairline: rgba(0, 0, 0, 0.1);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-icon: 0 4px 14px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --radius-icon: 22%;
+  --control-h: 32px;
+  --sidebar-w: 300px;
+  --verdict-detected: #1E3A8A;
+  --verdict-uncertain: #B45309;
+  --verdict-not-detected: #3F6212;
+  --verdict-quality: #6B7280;
+  --verdict-detected-bg: rgba(30, 58, 138, 0.08);
+  --verdict-uncertain-bg: rgba(180, 83, 9, 0.1);
+  --verdict-not-detected-bg: rgba(63, 98, 18, 0.1);
+  --verdict-quality-bg: rgba(107, 114, 128, 0.12);
+  --fwd: #64748B;
+  --bwd: #7C9A86;
+  --pt-tpra: #2563EB;
+  --pt-analyte: #DC2626;
+  --scale-ok: #4D7C0F;
+  --scale-warn: #F59E0B;
+  --state-queued: #6E6E73;
+  --state-queued-bg: rgba(110, 110, 115, 0.12);
+  --state-running: #0B5FA5;
+  --state-running-bg: rgba(0, 122, 255, 0.12);
+  --state-error: #B45309;
+  --state-error-bg: rgba(180, 83, 9, 0.12);
+  --chart-axis: #374151;
+  --chart-grid: #E5E7EB;
+  --chart-frame: #D1D5DB;
+  --chart-zero: #9CA3AF;
+  --chart-baseline: #111827;
+  --selection: rgba(10, 132, 255, 0.28);
+  --scrollbar: rgba(0, 0, 0, 0.28);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --accent: #0A84FF;
+    --accent-hover: #409cff;
+    --focus: #409cff;
+    --bg: #1C1C1E;
+    --bg-sidebar: rgba(28, 28, 30, 0.72);
+    --bg-sidebar-solid: #2C2C2E;
+    --bg-card: #2C2C2E;
+    --bg-toolbar: rgba(44, 44, 46, 0.72);
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(10, 132, 255, 0.22);
+    --bg-input: rgba(255, 255, 255, 0.08);
+    --text: #F5F5F7;
+    --text-secondary: #A1A1A6;
+    --text-inverse: #1C1C1E;
+    --hairline: rgba(255, 255, 255, 0.12);
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+    --shadow-icon: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --verdict-detected: #93C5FD;
+    --verdict-uncertain: #FCD34D;
+    --verdict-not-detected: #BEF264;
+    --verdict-quality: #9CA3AF;
+    --verdict-detected-bg: rgba(147, 197, 253, 0.12);
+    --verdict-uncertain-bg: rgba(252, 211, 77, 0.12);
+    --verdict-not-detected-bg: rgba(190, 242, 100, 0.12);
+    --scale-ok: #A3E635;
+    --scale-warn: #FBBF24;
+    --state-queued: #A1A1A6;
+    --state-queued-bg: rgba(161, 161, 166, 0.16);
+    --state-running: #7FC1FF;
+    --state-running-bg: rgba(10, 132, 255, 0.22);
+    --state-error: #FCD34D;
+    --state-error-bg: rgba(252, 211, 77, 0.14);
+    --chart-axis: #A1A1A6;
+    --chart-grid: rgba(255, 255, 255, 0.10);
+    --chart-frame: rgba(255, 255, 255, 0.20);
+    --chart-zero: #8E8E93;
+    --chart-baseline: #E5E7EB;
+    --verdict-quality-bg: rgba(156, 163, 175, 0.14);
+    --selection: rgba(10, 132, 255, 0.4);
+    --scrollbar: rgba(255, 255, 255, 0.28);
+  }
+}
+
+:root[data-theme="dark"] {
+  --accent: #0A84FF;
+  --accent-hover: #409cff;
+  --focus: #409cff;
+  --bg: #1C1C1E;
+  --bg-sidebar: rgba(28, 28, 30, 0.72);
+  --bg-sidebar-solid: #2C2C2E;
+  --bg-card: #2C2C2E;
+  --bg-toolbar: rgba(44, 44, 46, 0.72);
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(10, 132, 255, 0.22);
+  --bg-input: rgba(255, 255, 255, 0.08);
+  --text: #F5F5F7;
+  --text-secondary: #A1A1A6;
+  --text-inverse: #1C1C1E;
+  --hairline: rgba(255, 255, 255, 0.12);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-icon: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --verdict-detected: #93C5FD;
+  --verdict-uncertain: #FCD34D;
+  --verdict-not-detected: #BEF264;
+  --verdict-quality: #9CA3AF;
+  --verdict-detected-bg: rgba(147, 197, 253, 0.12);
+  --verdict-uncertain-bg: rgba(252, 211, 77, 0.12);
+  --verdict-not-detected-bg: rgba(190, 242, 100, 0.12);
+  --scale-ok: #A3E635;
+  --scale-warn: #FBBF24;
+  --state-queued: #A1A1A6;
+  --state-queued-bg: rgba(161, 161, 166, 0.16);
+  --state-running: #7FC1FF;
+  --state-running-bg: rgba(10, 132, 255, 0.22);
+  --state-error: #FCD34D;
+  --state-error-bg: rgba(252, 211, 77, 0.14);
+  --chart-axis: #A1A1A6;
+  --chart-grid: rgba(255, 255, 255, 0.10);
+  --chart-frame: rgba(255, 255, 255, 0.20);
+  --chart-zero: #8E8E93;
+  --chart-baseline: #E5E7EB;
+  --verdict-quality-bg: rgba(156, 163, 175, 0.14);
+  --selection: rgba(10, 132, 255, 0.4);
+  --scrollbar: rgba(255, 255, 255, 0.28);
+}
+
+::selection {
+  background: var(--selection);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+* {
+  scrollbar-color: var(--scrollbar) transparent;
+}

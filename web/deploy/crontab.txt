@@ -1,0 +1,4 @@
+# ITIES Detect on Frog. Install with: crontab /home/frog/analizatory/deploy/crontab.txt
+# The watchdog exits immediately when gunicorn already holds port 20412.
+@reboot /bin/sh /home/frog/analizatory/deploy/start.sh >>/home/frog/analizatory/cron.log 2>&1
+*/5 * * * * /bin/sh /home/frog/analizatory/deploy/start.sh >>/home/frog/analizatory/cron.log 2>&1

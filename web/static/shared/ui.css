@@ -1,0 +1,261 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--text-body);
+  line-height: var(--line-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  appearance: none;
+  border: 0;
+  background: var(--bg-input);
+  height: var(--control-h);
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.seg {
+  display: inline-flex;
+  background: var(--bg-input);
+  border-radius: var(--radius-control);
+  padding: 2px;
+  gap: 0;
+}
+
+.seg button {
+  background: transparent;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: var(--text-ui);
+}
+
+.seg button[aria-pressed="true"] {
+  background: var(--bg-card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.chip.detected { color: var(--verdict-detected); background: var(--verdict-detected-bg); }
+.chip.uncertain { color: var(--verdict-uncertain); background: var(--verdict-uncertain-bg); }
+.chip.not_detected { color: var(--verdict-not-detected); background: var(--verdict-not-detected-bg); }
+.chip.quality { color: var(--verdict-quality); background: var(--verdict-quality-bg); }
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.hairline {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+.site-footer {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding: 20px 16px 28px;
+  font-size: var(--text-ui);
+  color: var(--text-secondary);
+}
+
+.site-footer a {
+  color: var(--text-secondary);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--text);
+}
+
+.hub {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.hub-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px 24px;
+}
+
+.hub-main h1 {
+  margin: 0 0 8px;
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.hub-lead {
+  margin: 0 0 40px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.hub-tiles {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hub-tile {
+  width: 168px;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  background: none;
+  height: auto;
+  padding: 0;
+}
+
+.hub-tile:disabled,
+.hub-tile.is-soon {
+  cursor: default;
+  opacity: 1;
+}
+
+.hub-icon {
+  width: 128px;
+  height: 128px;
+  margin: 0 auto 12px;
+  border-radius: 22%;
+  box-shadow: var(--shadow-icon);
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+/* The icon art is pre-cropped to its own rounded square, so it fills the tile
+   and the 22% corner above lines up with the artwork. */
+.hub-icon img {
+  width: 128px;
+  height: 128px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.hub-tile h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.hub-tile p {
+  margin: 0;
+  font-size: var(--text-ui);
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.hub-badge {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+@media (max-width: 640px) {
+  .hub-tiles { flex-direction: column; align-items: center; gap: 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Interface state of a file in the queue, never a verdict word. */
+.chip.state-queued { color: var(--state-queued); background: var(--state-queued-bg); }
+.chip.state-running { color: var(--state-running); background: var(--state-running-bg); }
+.chip.state-error { color: var(--state-error); background: var(--state-error-bg); }
+
+.seg-lang button,
+.seg-theme button {
+  padding: 0 9px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.hub-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 0;
+}
+
+@media (max-width: 640px) {
+  .hub-bar { justify-content: center; flex-wrap: wrap; padding-top: 18px; }
+  .hub-main { padding-top: 24px; }
+}
