@@ -9,7 +9,7 @@ import os
 import re
 from collections import defaultdict
 
-ROOT = os.path.expanduser("~/Desktop/claude_brain/projekty/MVP_Colab/ITIES")
+ROOT = os.path.dirname(os.path.abspath(__file__))
 CSV = os.path.join(ROOT, "wyniki_analizy", "diagnoza_pozytywy_20260727.csv")
 
 
