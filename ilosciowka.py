@@ -105,6 +105,8 @@ def main():
               f"{w['ip_uA']:8.3f} {w['lab_pct']:8.4f} {pct:8.4f} {d:10.2e} "
               f"{(pct_cc if pct_cc is not None else float('nan')):9.4f}")
     print(f"\nMaksymalna bezwzględna różnica vs Excel lab: {maxdiff:.3e} p.p.")
+    if maxdiff > 1e-10:
+        raise SystemExit(1)
     if cc:
         print(f"Kalibracja CC: a={cc['a']:.4f} b={cc['b']:.4f} ({cc['zrodlo']})")
         print(f"Kalibracja lab: a={KALIBRACJA_LAB['a']:.4f} b={KALIBRACJA_LAB['b']:.4f}")

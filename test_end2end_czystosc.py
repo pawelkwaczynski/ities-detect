@@ -91,10 +91,14 @@ def main():
               f"{p['ip_lab_uA']:8.3f} {d_ip:7.1f} {pct:8.4f} {p['pct_lab']:8.4f} {d_pct:8.4f}")
 
     if dip:
-        print(f"\nΔ Ip: mediana {np.median(dip):+.1f} %, |Δ| ≤ 20 % dla "
-              f"{sum(abs(d) <= 20 for d in dip)}/{len(dip)} par")
+        matching_pairs = sum(abs(d) <= 20 for d in dip)
+        median_ip_diff = float(np.median(dip))
+        print(f"\nΔ Ip: mediana {median_ip_diff:+.1f} %, |Δ| ≤ 20 % dla "
+              f"{matching_pairs}/{len(dip)} par")
         print(f"Δ czystości: mediana {np.median(dpct):+.4f} p.p., "
               f"maks. |Δ| {max(abs(d) for d in dpct):.4f} p.p.")
+        if abs(median_ip_diff) > 20:
+            raise SystemExit(1)
 
 
 if __name__ == "__main__":

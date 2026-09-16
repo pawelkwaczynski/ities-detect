@@ -1,0 +1,38 @@
+{
+  "analit": "amfetamina",
+  "zrodlo": "CC (ities_update, pomiary 03.10.2024, paczka 27.07.2026)",
+  "galaz": "anodowa (pik dodatni) — wyższe R² niż katodowa, zgodne z metodą lab",
+  "jednostki": {
+    "Ip": "µA",
+    "c": "µM"
+  },
+  "a": 0.177164,
+  "b": -0.944193,
+  "R2": 0.994187,
+  "SE_reszt_uA": 0.609581,
+  "n_punktow": 27,
+  "zakres_c_uM": [
+    28.49,
+    168.539
+  ],
+  "LOD_uM": 2.498,
+  "LOQ_uM": 8.325,
+  "SD_blank_uA": 0.147497,
+  "warunki": "pH 5,5; 10 mM NaCl (wodna); 5 mM BTPPA TPBCl w 1,2-DCE; temp. otoczenia",
+  "lab_fit_anodowy": {
+    "a": 0.178,
+    "b": -1.089,
+    "R2": 0.9967
+  },
+  "lab_fit_katodowy": {
+    "a": -0.1551,
+    "b": -0.1524,
+    "R2": 0.9915
+  },
+  "lab_fit_excel_komercja": {
+    "a": 0.123,
+    "b": -2.248e-07,
+    "uwaga": "jednostki A i M; ROZBIEŻNOŚĆ ze slope 0,178 — do wyjaśnienia z Łukaszem"
+  },
+  "data_wyznaczenia": "2026-08-20"
+}
