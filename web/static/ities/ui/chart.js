@@ -48,7 +48,7 @@ function chartHeight(width) {
   return Math.round(Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, width / ASPECT)));
 }
 
-function seriesData(curve, calibrated) {
+export function seriesData(curve, calibrated) {
   const e = calibrated ? curve.E_cal : curve.E_raw;
   const i = curve.I_uA;
   const fwd = new Map();
@@ -174,15 +174,21 @@ function plate(ctx, text, cx, cy, color, colors, ratio) {
 }
 
 export class CvChart {
-  constructor(host, { headerMode = "dom" } = {}) {
+  constructor(host, { headerMode = "dom", fixedHeight = 0 } = {}) {
     this.host = host;
     this.headerMode = headerMode;
+    // A compact card in the multi file view asks for a shorter plot than the single
+    // file screen; everything else about the chart stays the same.
+    this.fixedHeight = fixedHeight;
     this.plot = null;
     this.result = null;
     this.calibrated = true;
     this.expert = false;
     this.markers = true;
+    this.pick = null;
     this.onManual = null;
+    this.onPickPoint = null;
+    this._pickListener = null;
     this._rows = 2;
     this._dataMin = null;
     this._dataMax = null;
@@ -243,6 +249,7 @@ export class CvChart {
   }
 
   _height(width) {
+    if (this.fixedHeight) return this.fixedHeight;
     const full = document.fullscreenElement;
     if (full && full.contains(this.host) && this.host.clientHeight > MIN_HEIGHT) {
       return this.host.clientHeight;
@@ -257,10 +264,12 @@ export class CvChart {
     this._layoutHandles();
   }
 
-  render(result, { expert = false, onManual, markers } = {}) {
+  render(result, { expert = false, onManual, markers, pick, onPickPoint } = {}) {
     this.result = result;
     this.expert = expert;
     this.onManual = onManual;
+    this.pick = pick || null;
+    this.onPickPoint = onPickPoint || null;
     if (markers !== undefined) this.markers = !!markers;
     const curve = result.curve;
     this.host.querySelector(".uplot")?.remove();
@@ -347,6 +356,7 @@ export class CvChart {
       },
     };
     this.plot = new uPlot(opts, [x, yF, yB], this.host);
+    this._armPicking();
     this.plot.root.setAttribute("role", "img");
     this.plot.root.setAttribute(
       "aria-label",
@@ -448,7 +458,10 @@ export class CvChart {
         );
       }
 
-      // Points 1 to 4: a marker you can see plus a numbered label on a plate.
+      // Points 1 to 4: a marker you can see plus a numbered label on a plate. The
+      // count of plates actually painted is published on the host element, which is
+      // what makes "no number twice" checkable from outside the canvas.
+      let plates = 0;
       for (const key of ["1", "2", "3", "4"]) {
         const e = pointE(result, key, calibrated);
         const i = pointI(result, key);
@@ -464,6 +477,9 @@ export class CvChart {
         ctx.lineWidth = 2 * ratio;
         ctx.strokeStyle = colors.surface;
         ctx.stroke();
+        // In expert mode the numbered plate would sit next to the drag handle, which
+        // already carries the same number. One number per point, never two.
+        if (this.expert) continue;
         const up = key === "2" || key === "4";
         let lx = px + 15 * ratio;
         let ly = py + (up ? -16 : 16) * ratio;
@@ -471,7 +487,9 @@ export class CvChart {
         if (ly < top + 12 * ratio) ly = py + 16 * ratio;
         if (ly > bottom - 12 * ratio) ly = py - 16 * ratio;
         plate(ctx, key, lx, ly, color, colors, ratio);
+        plates += 1;
       }
+      this.host.dataset.pointPlates = String(plates);
     }
 
     // Frame, so the plot reads as a figure and not as floating ink.
@@ -552,6 +570,31 @@ export class CvChart {
         x += item.width + itemGap;
       }
     });
+  }
+
+  // Pointing mode. The press reports a raw potential; the algorithm still decides which
+  // sample of the branch that is, through nearest_on_branch. Nothing is seeded here.
+  //
+  // pointerdown, not click: uPlot swallows a click whenever the pointer moved since the
+  // last press (its drag.click default calls stopImmediatePropagation), and moving the
+  // pointer to the peak before pressing it is the whole gesture here.
+  _armPicking() {
+    if (this._pickListener) {
+      this._pickListener.target.removeEventListener("pointerdown", this._pickListener.fn);
+      this._pickListener = null;
+    }
+    this.host.classList.toggle("is-picking", !!this.pick);
+    if (!this.pick || !this.onPickPoint || !this.plot) return;
+    const u = this.plot;
+    const fn = (ev) => {
+      const rect = u.over.getBoundingClientRect();
+      const value = u.posToVal(ev.clientX - rect.left, "x");
+      if (!Number.isFinite(value)) return;
+      const shift = this.calibrated ? Number(this.result?.shift) || 0 : 0;
+      this.onPickPoint(value - shift);
+    };
+    u.over.addEventListener("pointerdown", fn);
+    this._pickListener = { target: u.over, fn };
   }
 
   _layoutHandles() {

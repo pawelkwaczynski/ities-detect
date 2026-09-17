@@ -1,13 +1,16 @@
 import { locale, t } from "/shared/i18n.js";
 import {
+  belowThresholdPoints,
   fmtNum,
   fmtV,
   justification,
   nextSentence,
+  pointProminenceUa,
+  promThresholdUa,
   shaShort,
   verdictInfo,
 } from "./format.js";
-import { deviationScale, signedDeviationMv, signedMvText, verdictBadge } from "./verdict.js";
+import { deviationScale } from "./verdict.js";
 import { CvChart, annotationLegend, pointE, pointI, seriesLegend } from "./chart.js";
 
 // The result screen: who this file is, the four numbers that decide the verdict, the
@@ -27,6 +30,8 @@ const ICONS = {
     '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="M1.5 11.5 5 6.5l2.5 3L10 4l4.5 7.5"/></svg>',
   edit:
     '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" d="m10.5 2.5 3 3-8 8-3.5.5.5-3.5z"/></svg>',
+  trash:
+    '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" d="M3 4.5h10M6 2.5h4l.5 2H5.5l.5-2ZM4.5 4.5l.6 9h5.8l.6-9M6.7 7v4M9.3 7v4"/></svg>',
 };
 
 function el(tag, className, text) {
@@ -96,10 +101,28 @@ function breadcrumbs(file) {
   return nav;
 }
 
-function fileHead(file, result) {
+function paramsTitle(overrides) {
+  if (!overrides) return "";
+  return [
+    `${t("analysisParams.detected")} ${overrides.DETECTION_TOLERANCE_V * 1000} mV`,
+    `${t("analysisParams.review")} ${overrides.UNCERTAIN_TOLERANCE_V * 1000} mV`,
+    `${t("analysisParams.target")} ${overrides.AMPHETAMINE_TARGET_DELTA_V} V`,
+    `${t("analysisParams.forward")} ${(overrides.WIN_TPRA_POS_RAW || []).join(" → ")} V`,
+    `${t("analysisParams.reverse")} ${(overrides.WIN_TPRA_NEG_RAW || []).join(" → ")} V`,
+  ].join("\n");
+}
+
+function fileHead(file, result, onRemove) {
   const head = el("header", "file-head");
   const main = el("div", "file-head-main");
+  const titleRow = el("div", "file-title-row");
   const title = el("h1", "file-title", file.name);
+  titleRow.appendChild(title);
+  if (file.paramsOverride) {
+    const custom = el("span", "params-badge", t("params.custom"));
+    custom.title = paramsTitle(file.paramsOverride);
+    titleRow.appendChild(custom);
+  }
   const meta = el("p", "file-meta muted");
   const bits = [];
   if (file.sampleId) bits.push(t("head.sample", { id: file.sampleId }));
@@ -118,46 +141,85 @@ function fileHead(file, result) {
   }
   if (!result) bits.push(t("head.noAnalysis"));
   meta.textContent = bits.join(" · ");
-  main.append(title, meta);
+  main.appendChild(titleRow);
+  main.appendChild(meta);
   head.appendChild(main);
-  if (result) head.appendChild(verdictBadge(result.status));
+  if (onRemove) head.appendChild(iconButton(ICONS.trash, "session.removeFile", onRemove, "file-delete"));
   return head;
 }
 
-// ---------------------------------------------------------------- KPI row
+// ---------------------------------------------------------------- verdict card
 
-function kpiCard(labelKey, value, tone, accent) {
-  const card = el("div", "kpi" + (tone ? " tone-" + tone : "") + (accent ? " is-accent" : ""));
-  card.append(el("span", "kpi-label", t(labelKey)), el("strong", "kpi-value tabular", value));
-  return card;
+// Who signed this reading. An expert correction never hides the automatic one, so the
+// line always carries both words, exactly as SPEC 3.4 asks.
+function expertLabel(result, operator) {
+  const time = result._savedAtLabel || "";
+  if (!time) return t("print.expert");
+  return operator
+    ? t("verdict.expertWho", { operator, time })
+    : t("verdict.expertNoName", { time });
 }
 
-function kpiRow(result, constants) {
-  const section = el("section", "kpi-row");
-  const info = verdictInfo(result.status);
-  const target = constants?.AMPHETAMINE_TARGET_DELTA_V;
-  const none = t("common.none");
-  section.append(
-    kpiCard("kpi.delta", result.delta_Es == null ? none : fmtV(result.delta_Es) + " V"),
-    kpiCard("kpi.reference", target == null ? none : fmtV(target) + " V"),
-    kpiCard(
-      "kpi.deviation",
-      result.delta_Es == null ? none : signedMvText(signedDeviationMv(result, constants)),
-      info.tone,
-      true
-    ),
-    kpiCard("kpi.status", info.word, info.tone)
+function verdictPart(label, status) {
+  const info = verdictInfo(status);
+  const part = el("span", "verdict-part");
+  part.append(
+    el("span", "verdict-part-label", label + ": "),
+    el("strong", "verdict-part-word tone-" + info.tone, info.word)
   );
-  const scaleCell = el("div", "kpi kpi-scale");
-  scaleCell.appendChild(el("span", "kpi-label", t("kpi.tolerance")));
-  if (info.hasDelta && result.delta_Es != null && result.error_mV != null) {
-    scaleCell.appendChild(deviationScale(result, constants, info.tone));
-  } else {
-    // No deviation to place: say why and what to do instead of drawing an empty ruler.
-    scaleCell.appendChild(el("p", "kpi-repair", nextSentence(result)));
+  return part;
+}
+
+function verdictHeadline(file, result, operator, constants) {
+  const isManual = result.mode === "manual" && file.auto;
+  if (!isManual) {
+    const info = verdictInfo(result.status);
+    return el("p", "verdict-word tone-" + info.tone, info.word);
   }
-  section.appendChild(scaleCell);
-  return section;
+  const pair = el("div", "verdict-word verdict-word-pair");
+  const automatic = verdictPart(t("verdict.auto"), file.auto.status);
+  automatic.classList.add("verdict-part-auto");
+  const expert = verdictPart(expertLabel(result, result._operator || operator), result.status);
+  expert.classList.add("verdict-part-expert");
+  // A manual point the detector would not call a peak is named right here, in amber,
+  // next to the expert word it produced.
+  const weak = belowThresholdPoints(result, constants);
+  if (weak.length) {
+    expert.appendChild(
+      el("span", "verdict-below-threshold", " " + t("verdict.belowThresholdNote", { points: weak.join(", ") }))
+    );
+  }
+  pair.append(automatic, expert);
+  return pair;
+}
+
+// The card of version 1.0: the word, the number that decided it, what to do next, and
+// the tolerance ruler with its legend. Nothing on this screen says the verdict twice.
+function verdictCard(file, result, constants, opts) {
+  const info = verdictInfo(result.status);
+  const card = el("section", "card verdict-card tone-" + info.tone);
+  const main = el("div", "verdict-main");
+  main.append(
+    verdictHeadline(file, result, opts.operator, constants),
+    el("p", "verdict-why", justification(result, constants)),
+    el("p", "verdict-next muted", nextSentence(result))
+  );
+  if (opts.onNextReview) {
+    const next = el("button", "verdict-next-review");
+    next.type = "button";
+    next.textContent = t("verdict.nextReview");
+    next.addEventListener("click", opts.onNextReview);
+    main.appendChild(next);
+  }
+  card.appendChild(main);
+
+  const side = el("div", "verdict-side");
+  if (info.hasDelta && result.delta_Es != null && result.error_mV != null) {
+    if (opts.paramsCustom) side.appendChild(el("p", "scale-custom-label", t("scale.custom")));
+    side.appendChild(deviationScale(result, constants, info.tone, opts.paramsCustom));
+  }
+  card.appendChild(side);
+  return card;
 }
 
 // ---------------------------------------------------------------- chart card
@@ -238,49 +300,122 @@ function chartCard(result, opts) {
 
 // ---------------------------------------------------------------- peaks panel
 
-function peaksPanel(result, constants, opts) {
+function pairMidpoint(result, a, b, calibrated) {
+  if (calibrated) {
+    const key = a === "1" ? "E5" : "E6";
+    if (result[key] != null) return result[key];
+  }
+  const first = pointE(result, a, calibrated);
+  const second = pointE(result, b, calibrated);
+  return first == null || second == null ? null : (first + second) / 2;
+}
+
+// WCAG 2.2 dragging-alternative: every point 1 to 4 is also a number field, stepping
+// by 1 mV, so the expert correction never depends on a mouse drag.
+function peakInput(key, value, opts) {
+  const input = document.createElement("input");
+  input.type = "number";
+  input.step = "0.001";
+  input.className = "peak-input tabular";
+  input.value = value == null ? "" : Number(value).toFixed(3);
+  input.setAttribute("aria-label", t("peaks.eInput", { n: key }));
+  input.addEventListener("change", () => {
+    const parsed = Number(input.value);
+    if (!input.value.trim() || !Number.isFinite(parsed)) return;
+    opts.onPointInput(key, parsed);
+  });
+  return input;
+}
+
+// Prominence of the point, and a plain warning when it is under the threshold the
+// detector uses. The expert keeps the decision, the screen keeps the fact.
+function promCell(result, row, opts) {
+  const cell = el("td", "peak-prom");
+  if (!row.editable) {
+    cell.textContent = "—";
+    return cell;
+  }
+  const value = pointProminenceUa(result, row.key);
+  if (value == null) {
+    cell.textContent = "—";
+    return cell;
+  }
+  const threshold = promThresholdUa(opts.constants);
+  cell.appendChild(el("span", null, fmtNum(value, 2)));
+  if (value < threshold) {
+    const flag = el("span", "peak-below-threshold", t("peaks.belowThreshold"));
+    flag.dataset.tooltipText = t("tip.belowThreshold", {
+      value: fmtNum(value, 2),
+      threshold: fmtNum(threshold, 2),
+    });
+    cell.appendChild(flag);
+  }
+  return cell;
+}
+
+function peaksPanel(result, opts) {
   const aside = el("aside", "card peaks-card");
   aside.appendChild(el("h2", "panel-title", t("peaks.title")));
 
-  const rows = ["1", "2", "3", "4"]
-    .map((key) => ({
-      key,
-      e: pointE(result, key, opts.calibrated),
-      i: pointI(result, key),
-    }))
-    .filter((row) => row.e != null && row.i != null);
-
-  if (!rows.length) {
-    aside.appendChild(el("p", "muted panel-empty", t("peaks.empty")));
-  } else {
-    const table = el("table", "peaks-table tabular");
-    const thead = el("thead");
-    const trh = el("tr");
-    for (const key of ["peaks.col.n", "peaks.col.e", "peaks.col.i", "peaks.col.type"]) {
-      trh.appendChild(el("th", null, t(key)));
-    }
-    thead.appendChild(trh);
-    const tbody = el("tbody");
-    for (const row of rows) {
-      const tr = el("tr");
-      const first = el("td", "peak-n");
-      const dot = el("span", "peak-dot " + (row.key === "1" || row.key === "2" ? "tpra" : "analyte"));
-      first.append(dot, el("span", null, row.key));
-      tr.append(
-        first,
-        el("td", null, fmtNum(row.e, 3)),
-        el("td", null, fmtNum(row.i, 1)),
-        el("td", "peak-type", t("peaks.type." + row.key))
-      );
-      tbody.appendChild(tr);
-    }
-    table.append(thead, tbody);
-    aside.appendChild(table);
+  const rows = [
+    { key: "1", meaning: t("peaks.meaning.1"), e: pointE(result, "1", opts.calibrated), i: pointI(result, "1"), tone: "tpra", editable: true },
+    { key: "2", meaning: t("peaks.meaning.2"), e: pointE(result, "2", opts.calibrated), i: pointI(result, "2"), tone: "tpra", editable: true },
+    { key: "3", meaning: t("peaks.meaning.3"), e: pointE(result, "3", opts.calibrated), i: pointI(result, "3"), tone: "analyte", editable: true },
+    { key: "4", meaning: t("peaks.meaning.4"), e: pointE(result, "4", opts.calibrated), i: pointI(result, "4"), tone: "analyte", editable: true },
+    { key: "E5", meaning: t("peaks.meaning.5"), e: pairMidpoint(result, "1", "2", opts.calibrated), i: null, tone: "tpra" },
+    { key: "E6", meaning: t("peaks.meaning.6"), e: pairMidpoint(result, "3", "4", opts.calibrated), i: null, tone: "analyte" },
+  ];
+  const table = el("table", "peaks-table tabular");
+  const thead = el("thead");
+  const trh = el("tr");
+  for (const key of ["peaks.col.n", "peaks.col.meaning", "peaks.col.e", "peaks.col.i", "peaks.col.prom"]) {
+    trh.appendChild(el("th", null, t(key)));
   }
+  thead.appendChild(trh);
+  const tbody = el("tbody");
+  for (const row of rows) {
+    const tr = el("tr");
+    const first = el("td", "peak-n");
+    const dot = el("span", "peak-dot " + row.tone);
+    first.append(dot, el("span", null, row.key));
+    const eCell = el("td");
+    const shown = row.editable && opts.draft?.[row.key] != null ? opts.draft[row.key] : row.e;
+    if (row.editable && opts.expert) eCell.appendChild(peakInput(row.key, shown, opts));
+    else eCell.textContent = shown == null ? "—" : fmtNum(shown, 3);
+    tr.append(
+      first,
+      el("td", "peak-type", row.meaning),
+      eCell,
+      el("td", null, row.i == null ? "—" : fmtNum(row.i, 1)),
+      promCell(result, row, opts)
+    );
+    tbody.appendChild(tr);
+  }
+  table.append(thead, tbody);
+  aside.appendChild(table);
 
   const actions = el("div", "peaks-actions");
+  const missingAnalyte =
+    (result.E3_raw == null || result.E4_raw == null) &&
+    ["TPrA_ONLY", "NO_VALID_ANALYTE_PAIR", "not_detected"].includes(result.status);
+  const missingStandard =
+    (result.E1_raw == null || result.E2_raw == null) &&
+    result.status === "MEASUREMENT_QUALITY_FAIL" &&
+    ["NO_TPRA_IN_WINDOWS", "NO_VALID_TPRA_PAIR"].includes(result.internal_reason);
+  if (missingAnalyte || missingStandard) {
+    const kind = missingAnalyte ? "analyte" : "standard";
+    const pick = el("button", "primary " + (missingAnalyte ? "seed-analyte" : "seed-standard"));
+    pick.type = "button";
+    pick.textContent = t(missingAnalyte ? "peaks.addAnalyte" : "peaks.addStandard");
+    pick.dataset.tooltipKey = missingAnalyte ? "tip.addAnalyte" : "tip.addStandard";
+    pick.setAttribute("aria-pressed", String(opts.pick?.kind === kind));
+    pick.addEventListener("click", () => opts.onPick(kind));
+    actions.appendChild(pick);
+  }
   const again = el("button", "primary");
   again.type = "button";
+  again.classList.add("peaks-redetect");
+  again.dataset.tooltipKey = "tip.redetect";
   again.innerHTML = ICONS.detect;
   again.append(document.createTextNode(" " + t("peaks.redetect")));
   again.addEventListener("click", opts.onRedetect);
@@ -292,31 +427,6 @@ function peaksPanel(result, constants, opts) {
   edit.addEventListener("click", opts.onEdit);
   actions.append(again, edit);
   aside.appendChild(actions);
-
-  const analysis = el("div", "analysis-block");
-  analysis.appendChild(el("h3", "panel-subtitle", t("analysis.title")));
-  const dl = el("dl", "kv kv-tight");
-  const window = potentialWindow(result, opts.calibrated);
-  if (window) kv(dl, t("analysis.window"), window);
-  const target = constants?.AMPHETAMINE_TARGET_DELTA_V;
-  kv(dl, t("analysis.reference"), target == null ? t("common.none") : fmtV(target) + " V");
-  kv(
-    dl,
-    t("analysis.delta"),
-    result.delta_Es == null ? t("common.none") : fmtV(result.delta_Es) + " V"
-  );
-  const info = verdictInfo(result.status);
-  const devDt = el("dt", null, t("analysis.deviation"));
-  const devDd = el(
-    "dd",
-    "tabular kv-accent tone-" + info.tone,
-    result.delta_Es == null ? t("common.none") : signedMvText(signedDeviationMv(result, constants))
-  );
-  dl.append(devDt, devDd);
-  analysis.appendChild(dl);
-  analysis.appendChild(el("p", "analysis-why", justification(result, constants)));
-  analysis.appendChild(el("p", "analysis-next muted", nextSentence(result)));
-  aside.appendChild(analysis);
   return aside;
 }
 
@@ -334,10 +444,12 @@ function foldSection(titleKey, build, open) {
   return details;
 }
 
-function paramsSection(result, constants) {
+function paramsSection(result, constants, calibrated) {
   return foldSection("section.params", (body) => {
     const dl = el("dl", "kv");
     const none = t("common.none");
+    kv(dl, t("analysis.window"), potentialWindow(result, calibrated) || none);
+    kv(dl, t("params.detectionMethod"), methodLabel(result));
     kv(dl, t("details.ipTpraFwd"), fmtNum(result.Ip_TPrA_fwd_uA, 3) + " µA");
     kv(dl, t("details.ipTpraBwd"), fmtNum(result.Ip_TPrA_bwd_uA, 3) + " µA");
     kv(
@@ -455,8 +567,7 @@ function historySection(file, result) {
       const line = el("div", "history-line");
       line.append(
         el("strong", null, entry.mode === "manual" ? t("history.expert") : t("history.auto")),
-        el("span", "muted", " · v" + (entry.version || "?")),
-        el("span", "muted", " · " + verdictInfo(entry.status).word)
+        el("span", "muted", " · v" + (entry.version || "?"))
       );
       const when = el(
         "div",
@@ -501,22 +612,37 @@ function metadataSection(file, result, algoVersion, algoSha) {
 
 // ---------------------------------------------------------------- entry point
 
+// While the worker chews on this file the screen keeps its shape: a grey verdict card
+// and a grey chart, marked busy, instead of an empty page that looks broken.
+function skeleton() {
+  const wrap = el("div", "skeleton");
+  wrap.setAttribute("aria-busy", "true");
+  const card = el("div", "card skeleton-verdict");
+  card.append(el("span", "skeleton-bar w-l"), el("span", "skeleton-bar w-m"), el("span", "skeleton-bar w-s"));
+  const chart = el("div", "card skeleton-chart");
+  wrap.append(card, chart);
+  wrap.appendChild(el("p", "muted", t("state.running")));
+  return wrap;
+}
+
 export function renderResult(host, opts) {
   const { file, result, constants, algoVersion, algoSha } = opts;
   host.innerHTML = "";
   host.appendChild(breadcrumbs(file));
-  host.appendChild(fileHead(file, result));
+  host.appendChild(fileHead(file, result, opts.onRemove));
 
   if (!result) {
+    if (file.state === "running") {
+      host.appendChild(skeleton());
+      return null;
+    }
     const waiting = el("div", "card empty-drop");
-    waiting.appendChild(
-      el("p", null, file.state === "running" ? t("state.running") : t("empty.noChart"))
-    );
+    waiting.appendChild(el("p", null, t("empty.noChart")));
     host.appendChild(waiting);
     return null;
   }
 
-  host.appendChild(kpiRow(result, constants));
+  host.appendChild(verdictCard(file, result, constants, opts));
 
   const grid = el("div", "result-grid");
   let chart = null;
@@ -527,20 +653,33 @@ export function renderResult(host, opts) {
     onAxis: opts.onAxis,
     onMarkers: opts.onMarkers,
   });
+  if (opts.pick) {
+    const hint = el("p", "pick-hint");
+    hint.append(
+      el("strong", null, t("peaks.pick." + opts.pick.key)),
+      el("span", "muted", " " + t("peaks.pickEscape"))
+    );
+    card.insertBefore(hint, chartHost);
+  }
   grid.appendChild(card);
   grid.appendChild(
-    peaksPanel(result, constants, {
+    peaksPanel(result, {
       calibrated: opts.calibrated,
+      constants,
       expert: opts.expert,
+      pick: opts.pick,
+      draft: opts.draft,
       onRedetect: opts.onRedetect,
       onEdit: opts.onEdit,
+      onPick: opts.onPick,
+      onPointInput: opts.onPointInput,
     })
   );
   host.appendChild(grid);
 
   if (opts.expertPanel) host.appendChild(opts.expertPanel);
 
-  host.appendChild(paramsSection(result, constants));
+  host.appendChild(paramsSection(result, constants, opts.calibrated));
   host.appendChild(historySection(file, result));
   host.appendChild(metadataSection(file, result, algoVersion, algoSha));
 
@@ -550,7 +689,9 @@ export function renderResult(host, opts) {
     chart.render(result, {
       expert: opts.expert,
       markers: opts.markers,
+      pick: opts.pick,
       onManual: opts.onManual,
+      onPickPoint: opts.onPickPoint,
     });
   } else {
     chartHost.appendChild(el("p", "muted", t("empty.noChart")));

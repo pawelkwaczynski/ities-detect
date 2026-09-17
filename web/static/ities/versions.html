@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title data-i18n-doc="versions.pageTitle">Version history · ITIES Detect</title>
   <link rel="stylesheet" href="/shared/tokens.css">
   <link rel="stylesheet" href="/shared/ui.css">
@@ -11,6 +12,7 @@
 <body>
   <main class="versions-page">
     <div class="versions-bar">
+      <span class="page-back" id="versions-back"></span>
       <p class="versions-crumbs">
         <a href="/" data-i18n="common.analysers">CV Analysers</a> ·
         <a href="/ities/" data-i18n="common.ities">ITIES Detect</a>
@@ -18,6 +20,7 @@
       <div id="versions-prefs" class="toolbar-prefs"></div>
     </div>
     <h1 data-i18n="versions.h1">Version history</h1>
+    <ol class="timeline" id="timeline"></ol>
     <h2 data-i18n="versions.algo">Algorithm</h2>
     <p class="muted" data-i18n="versions.note"></p>
     <p class="version-diff" data-i18n="versions.diff"></p>
@@ -43,18 +46,41 @@
   </main>
   <script type="module">
     import { applyStatic, onLangChange, t } from "/shared/i18n.js";
+    import { installTooltips } from "/shared/tooltip.js";
     import { mountPrefs } from "/shared/prefs.js";
+    import { mountBackLink } from "/shared/backlink.js";
     import { APP_VERSION, APP_CHANGELOG_KEYS } from "/ities/app.js";
-    import { shaShort } from "/ities/ui/format.js";
-
-    // The changelog lives in algo/versions.json in the lab's Polish. The dictionary
-    // carries the translation, keyed by version, and falls back to the manifest text.
-    const CHANGELOG_KEYS = {
-      "1.1": ["algo.changelog.1_1.lod", "algo.changelog.1_1.pair"],
-      "1.0": ["algo.changelog.1_0.notebook"],
-    };
+    import { algoChangelog, shaShort } from "/ities/ui/format.js";
 
     let manifest = [];
+
+    // The road from the first prototype to this release, one entry per step. Dates,
+    // numbers and wording come from the project documents through the dictionary;
+    // nothing is written here.
+    const HISTORY_STEPS = 10;
+
+    function renderHistory() {
+      const list = document.getElementById("timeline");
+      list.innerHTML = "";
+      for (let step = 1; step <= HISTORY_STEPS; step += 1) {
+        const item = document.createElement("li");
+        item.className = "timeline-item";
+        const date = document.createElement("span");
+        date.className = "timeline-date tabular";
+        date.textContent = t(`history.${step}.date`);
+        const body = document.createElement("div");
+        body.className = "timeline-body";
+        const head = document.createElement("strong");
+        head.className = "timeline-head";
+        head.textContent = t(`history.${step}.head`);
+        const text = document.createElement("p");
+        text.className = "timeline-text";
+        text.textContent = t(`history.${step}.text`);
+        body.append(head, text);
+        item.append(date, body);
+        list.appendChild(item);
+      }
+    }
 
     function renderApp() {
       document.getElementById("app-ver-line").textContent =
@@ -91,9 +117,7 @@
         sha.textContent = shaShort(e.sha256);
         const changes = document.createElement("td");
         const list = document.createElement("ul");
-        const keys = CHANGELOG_KEYS[e.version];
-        const lines = keys ? keys.map((k) => t(k)) : (e.changelog || []);
-        for (const line of lines) {
+        for (const line of algoChangelog(e)) {
           const li = document.createElement("li");
           li.textContent = line;
           list.appendChild(li);
@@ -116,11 +140,15 @@
     }
 
     mountPrefs(document.getElementById("versions-prefs"));
+    mountBackLink(document.getElementById("versions-back"), { fallback: "/ities/" });
+    installTooltips();
     applyStatic(document);
     onLangChange(() => {
+      renderHistory();
       renderApp();
       renderTable();
     });
+    renderHistory();
     renderApp();
 
     manifest = await fetch("/api/versions").then((r) => r.json()).catch(() => []);

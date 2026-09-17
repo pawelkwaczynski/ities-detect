@@ -8,6 +8,7 @@ export class Engine {
     this.version = null;
     this.sha256 = null;
     this.constants = null;
+    this.defaultConstants = null;
     this.cdn = false;
     this._pending = new Map();
     this._status = "idle";
@@ -53,6 +54,7 @@ export class Engine {
       this.version = msg.version;
       this.sha256 = msg.sha256;
       this.constants = msg.constants;
+      this.defaultConstants = JSON.parse(JSON.stringify(msg.constants || {}));
       this.cdn = !!msg.cdn;
       this._status = "ready";
       this.emit(msg);
@@ -60,6 +62,16 @@ export class Engine {
       if (boot) {
         this._pending.delete("__init__");
         boot.resolve(msg);
+      }
+      return;
+    }
+    if (msg.type === "params") {
+      this.constants = msg.constants;
+      this.emit(msg);
+      const pending = this._pending.get("__params__");
+      if (pending) {
+        this._pending.delete("__params__");
+        pending.resolve(msg);
       }
       return;
     }
@@ -136,6 +148,14 @@ export class Engine {
         done,
         total,
       });
+    });
+  }
+
+  setParams(overrides) {
+    if (!this.ready) return Promise.reject(new Error("Engine is not ready"));
+    return new Promise((resolve, reject) => {
+      this._pending.set("__params__", { resolve, reject });
+      this.worker.postMessage({ type: "params", overrides: overrides || null });
     });
   }
 

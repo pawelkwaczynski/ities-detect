@@ -2,8 +2,8 @@
 # Build the deployment package for the Frog VPS (Alpine 3.23, Python 3.12, user frog).
 #
 # Produces, in deploy/:
-#   analizatory_bundle.tar.gz   server/, algo/, static/ without static/pyodide/, README, both
-#                               RELEASE_CHECK files (ITIES Detect and PeakWise)
+#   analizatory_bundle.tar.gz   server/, algo/, static/ without static/pyodide/, assets/partners/,
+#                               README, both RELEASE_CHECK files (ITIES Detect and PeakWise)
 #   fetch_pyodide_on_server.sh  runs ON the server: wget Pyodide, then gzip -k the parts that need it
 #   start.sh                    gunicorn watchdog with /home/frog/analizatory paths
 #   crontab.txt                 @reboot and */5 entries
@@ -166,6 +166,13 @@ ROOT="$REMOTE_ROOT"
 LOG="\${ITIES_LOG:-$REMOTE_ROOT/app.log}"
 BIND="\${ITIES_BIND:-0.0.0.0:20412}"
 VENV="\$ROOT/.venv"
+AUTH_FILE="\${ITIES_AUTH_FILE:-$REMOTE_ROOT/server/auth.local.json}"
+
+if [ ! -f "\$AUTH_FILE" ]; then
+  echo "missing authentication configuration: \$AUTH_FILE" >&2
+  exit 1
+fi
+export ITIES_AUTH_FILE="\$AUTH_FILE"
 
 if pgrep -f "gunicorn.*20412" >/dev/null 2>&1; then
   exit 0
@@ -198,16 +205,33 @@ cat > "$DEPLOY/crontab.txt" <<EOF
 EOF
 
 # -------------------------------------------------------------------- the tarball
-rm -f "$BUNDLE"
-tar -czf "$BUNDLE" \
+# Stage a copy and stamp every first-party .js/.css reference with a content hash.
+# The public host sits behind Cloudflare, which caches .js/.css at the edge and makes
+# browsers keep them for four hours regardless of our Cache-Control, so a plain deploy
+# left users running a cached app.js against the new index.html. Sources stay unstamped.
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/analizatory_stage.XXXXXX")"
+trap 'rm -rf "$STAGE"' EXIT
+tar -cf - \
   -C "$ROOT" \
   --exclude='__pycache__' \
   --exclude='.venv' \
   --exclude='.DS_Store' \
   --exclude='static/pyodide' \
+  --exclude='server/auth.local.json' \
   --exclude='deploy/.pyodide_manifest' \
   --exclude='deploy/analizatory_bundle.tar.gz' \
-  server algo static README.md RELEASE_CHECK.md RELEASE_CHECK_PEAKWISE.md deploy
+  --exclude='deploy/analizatory_bundle*.tar.gz' \
+  server algo static assets/partners README.md RELEASE_CHECK.md RELEASE_CHECK_PEAKWISE.md deploy \
+  | tar -xf - -C "$STAGE"
+python3 "$ROOT/tools/stamp_versions.py" "$STAGE/static"
+
+rm -f "$BUNDLE"
+tar -czf "$BUNDLE" -C "$STAGE" server algo static assets README.md RELEASE_CHECK.md RELEASE_CHECK_PEAKWISE.md deploy
+
+if tar -tzf "$BUNDLE" | grep -qx 'server/auth.local.json'; then
+  echo "refusing bundle: server/auth.local.json is present" >&2
+  exit 1
+fi
 
 rm -f "$MANIFEST"
 
@@ -230,5 +254,5 @@ Next, on the server:
   sh deploy/fetch_pyodide_on_server.sh
   sh deploy/start.sh
   crontab deploy/crontab.txt
-  wget -qO- http://127.0.0.1:20412/api/versions
+  wget -qO- http://127.0.0.1:20412/healthz
 EOF

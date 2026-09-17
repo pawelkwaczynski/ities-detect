@@ -7,6 +7,13 @@ ROOT="/home/frog/analizatory"
 LOG="${ITIES_LOG:-/home/frog/analizatory/app.log}"
 BIND="${ITIES_BIND:-0.0.0.0:20412}"
 VENV="$ROOT/.venv"
+AUTH_FILE="${ITIES_AUTH_FILE:-/home/frog/analizatory/server/auth.local.json}"
+
+if [ ! -f "$AUTH_FILE" ]; then
+  echo "missing authentication configuration: $AUTH_FILE" >&2
+  exit 1
+fi
+export ITIES_AUTH_FILE="$AUTH_FILE"
 
 if pgrep -f "gunicorn.*20412" >/dev/null 2>&1; then
   exit 0

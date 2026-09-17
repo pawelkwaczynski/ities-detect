@@ -1,20 +1,62 @@
+/* PeakWise 1.1: the frame is ITIES Detect 1.4.
+   The shell blocks below (sidebar head, filter list, toolbar, summary bar, status bar,
+   dialogs) follow static/ities/styles.css line for line, so an operator moving between
+   the two analysers sees one application. Everything under "PeakWise own" is this
+   application's own screen: the result card, the chart, the session table. */
+
 @import url("/vendor/uplot/uPlot.min.css");
 
+/* ---------------------------------------------------------------- shell */
+
+/* The shell is exactly one window tall and only the content area scrolls. As a flex
+   item the grid had an indefinite height, its single row grew to the height of the
+   result screen, and the footer with the engine state and the settings ended up
+   below the fold; a definite height on both fixes that for good. */
 body.app-body {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app {
-  flex: 1;
   display: grid;
   grid-template-columns: var(--sidebar-w) 1fr;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
-  height: calc(100vh - 52px);
+  height: 100vh;
 }
 
-/* Sidebar ---------------------------------------------------------------- */
+@media print {
+  body.app-body { height: auto; overflow: visible; }
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  padding: 18px 22px 28px;
+  outline: none;
+}
+
+.drop-target.is-over {
+  outline: 2px dashed var(--accent);
+  outline-offset: -8px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* ---------------------------------------------------------------- sidebar */
 
 .sidebar {
   background: var(--bg-sidebar);
@@ -25,31 +67,756 @@ body.app-body {
   flex-direction: column;
   min-height: 0;
   overflow: hidden;
+  container-type: inline-size;
 }
 
 @supports not ((backdrop-filter: blur(20px)) or (-webkit-backdrop-filter: blur(20px))) {
   .sidebar { background: var(--bg-sidebar-solid); }
 }
 
-.sidebar-filters {
-  margin: 12px;
+/* 64 px header: a 48 px icon that never spills out of its box, the home icon and the
+   application switcher on the first line, the tagline clipped to one line under it. */
+.sidebar-head {
   display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 12px 16px;
 }
 
-.sidebar-filters button {
-  flex: 1;
+.app-mark {
+  width: 48px;
+  height: 48px;
+  min-height: 48px;
+  min-width: 48px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 0;
+  border-radius: 22%;
+  overflow: hidden;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  cursor: zoom-in;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.app-mark img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.sidebar-titles {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.sidebar-titles strong,
+.sidebar-titles .app-switch-trigger { font-size: 15px; font-weight: 600; }
+
+.sidebar-tagline {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.sidebar-list-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 8px;
+}
+
+.sidebar-search { flex: 1; min-width: 0; }
+
+.sidebar-search input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 30px;
+  border-radius: var(--radius-control);
+  border: 1px solid var(--hairline);
+  background: var(--bg-input);
+  padding: 0 10px;
+  font-size: var(--text-ui);
+}
+
+/* Filters as a source list (addendum 5, point II): one row per group, count on the
+   right, nothing clipped. The section headings keep the two lists apart. */
+.sidebar-section {
+  margin: 16px 12px 6px;
   font-size: 11px;
-  padding: 0 6px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.filter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: default;
+  user-select: none;
+}
+
+.filter-row:hover { background: rgba(0, 0, 0, 0.04); }
+.filter-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.filter-row.is-selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.filter-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.electrode-list {
-  overflow: auto;
-  padding: 0 8px 16px;
-  flex: 1;
+.filter-count {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-secondary);
 }
 
-.sidebar-empty { padding: 12px; font-size: var(--text-ui); }
+.filter-row.is-selected .filter-count { color: var(--text); }
+
+.filter-icon {
+  display: inline-flex;
+  width: 14px;
+  color: var(--text-secondary);
+  flex: none;
+}
+
+.filter-dot {
+  width: 8px;
+  height: 8px;
+  margin: 0 3px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--filter-tone, var(--text-secondary));
+}
+
+.filter-dot.tone-detected { --filter-tone: var(--verdict-detected); }
+.filter-dot.tone-uncertain { --filter-tone: var(--verdict-uncertain); }
+.filter-dot.tone-not_detected { --filter-tone: var(--verdict-not-detected); }
+.filter-dot.tone-quality { --filter-tone: var(--verdict-quality); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .filter-row:hover { background: rgba(255, 255, 255, 0.05); }
+  :root:not([data-theme="light"]) .filter-row.is-selected {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+
+:root[data-theme="dark"] .filter-row:hover { background: rgba(255, 255, 255, 0.05); }
+:root[data-theme="dark"] .filter-row.is-selected {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.verdict-summary {
+  gap: 5px;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.verdict-summary-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.verdict-summary-dot,
+.summary-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+.verdict-summary-part strong { font-size: 12px; }
+.verdict-summary-label { color: var(--text-secondary); }
+.summary-sep { color: var(--text-secondary); }
+.summary-pending { color: var(--text-secondary); }
+.tone-detected { color: var(--verdict-detected); }
+.tone-uncertain { color: var(--verdict-uncertain); }
+.tone-not_detected { color: var(--verdict-not-detected); }
+.tone-quality { color: var(--verdict-quality); }
+
+.file-list { padding-left: 16px !important; }
+
+.file-item {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.file-actions { display: flex; align-items: center; flex: none; }
+
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  min-height: 34px;
+  height: auto;
+  padding: 5px 8px;
+  text-align: left;
+  border-radius: 8px;
+}
+
+.file-remove {
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  margin-left: 2px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 17px;
+  opacity: 0;
+}
+
+.file-item:hover .file-remove,
+.file-remove:focus-visible,
+.file-item:hover .row-menu-trigger,
+.file-item .row-menu-trigger:focus-visible { opacity: 1; }
+
+@media (hover: none) {
+  .tree-rename,
+  .tree-remove,
+  .row-menu-trigger,
+  .file-remove { opacity: 1; }
+}
+
+.file-row:hover { background: var(--bg-hover); }
+.file-row.is-selected { background: var(--bg-active); }
+
+.file-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.file-name {
+  font-size: var(--text-ui);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-when { font-size: 11px; }
+
+.dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--verdict-quality);
+}
+
+.dot-detected { background: var(--verdict-detected); }
+.dot-uncertain { background: var(--verdict-uncertain); }
+.dot-not_detected { background: var(--verdict-not-detected); }
+.dot-quality { background: var(--verdict-quality); }
+.dot-state-error { background: var(--state-error); }
+.dot-state-running { background: var(--state-running); }
+.dot-state-queued {
+  background: transparent;
+  border: 1.5px solid var(--state-queued);
+}
+
+.sidebar-drop {
+  margin: 0 12px 12px;
+  padding: 14px 12px;
+  border: 1px dashed var(--hairline);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  font-size: var(--text-ui);
+  color: var(--text-secondary);
+}
+
+.sidebar-drop strong { color: var(--text); }
+.sidebar-drop svg { color: var(--text-secondary); margin-bottom: 4px; }
+.sidebar-formats { font-size: 11px; }
+
+.sidebar-drop-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.sidebar-drop-actions button { font-size: var(--text-ui); }
+
+/* ---------------------------------------------------------------- toolbar */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--bg-toolbar);
+  backdrop-filter: saturate(180%) blur(16px);
+  border-bottom: 1px solid var(--hairline);
+  font-size: var(--text-ui);
+}
+
+.toolbar .grow { flex: 1; }
+
+.toolbar-prefs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Seven controls, one row. The spacer splits the row into the data actions on the
+   left and the two controls on the right; below 1100 px it becomes a full width line
+   break, so the right group moves down as a group instead of wrapping one by one. */
+.toolbar-lead {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-spacer { flex: 1 1 auto; }
+
+.expert-help { display: inline-flex; align-items: center; gap: 2px; }
+.info-button {
+  width: 32px;
+  min-width: 32px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.menu { position: relative; }
+
+.menu-list {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-control);
+  min-width: 180px;
+  padding: 4px;
+  z-index: 20;
+  display: none;
+}
+
+.menu.is-open .menu-list { display: block; }
+
+.menu-heading {
+  margin: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.menu-note {
+  margin: 6px 10px 2px;
+  max-width: 26ch;
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.menu-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+}
+.summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  height: 36px;
+  min-height: 36px;
+  box-sizing: border-box;
+  padding: 0 20px;
+  background: var(--bg-sunken);
+  border-bottom: 1px solid var(--hairline);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* The script toggles the hidden attribute while painting, so the rule must not depend on it. */
+.summary-bar { display: none !important; }
+
+.summary-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.summary-total { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.summary-total strong { font-size: 13px; font-weight: 600; color: var(--text); }
+.summary-total .muted { font-size: 13px; }
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  white-space: nowrap;
+  transition: background 150ms ease-out, border-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+
+.stat-pill:hover { background: rgba(0, 0, 0, 0.05); }
+
+.stat-pill[aria-pressed="true"] {
+  background: var(--bg-card);
+  border-color: var(--hairline);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.06);
+}
+
+.stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--stat-tone, var(--text-secondary));
+}
+
+.stat-count { font-size: 13px; font-weight: 600; color: var(--stat-tone, var(--text)); }
+.stat-label { font-size: 13px; color: var(--text-secondary); }
+.stat-pill[aria-pressed="true"] .stat-label { color: var(--text); }
+
+.stat-pill.tone-detected { --stat-tone: var(--verdict-detected); }
+.stat-pill.tone-uncertain { --stat-tone: var(--verdict-uncertain); }
+.stat-pill.tone-not_detected { --stat-tone: var(--verdict-not-detected); }
+.stat-pill.tone-quality { --stat-tone: var(--verdict-quality); }
+
+.summary-bar .summary-skipped {
+  font-size: 12px;
+  white-space: nowrap;
+  margin-right: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stat-pill:hover { background: rgba(255, 255, 255, 0.06); }
+}
+
+:root[data-theme="dark"] .stat-pill:hover { background: rgba(255, 255, 255, 0.06); }
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-pill { transition: none; }
+}
+
+/* On a narrow screen the pills keep the dot and the number; the word is in the
+   tooltip and in the accessible name, and the bar stays 36 px tall. */
+@media (max-width: 899px) {
+  .summary-bar { gap: 10px; padding: 0 12px; }
+  .summary-bar-left { gap: 8px; }
+  .stat-label { display: none; }
+  .stat-pill { padding: 0 8px; }
+}
+
+/* ---------------------------------------------------------------- status bar */
+
+/* The footer carries the rare settings and the partner row, so it is 52 px tall and
+   everything in it sits on the same middle line (addendum 2, points S and Z). */
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-height: 52px;
+  padding: 6px 16px;
+  border-top: 1px solid var(--hairline);
+  background: var(--bg-toolbar);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Both groups wrap inside themselves: on a phone the whole footer is one column and
+   a group that refuses to break would push the page sideways. */
+.status-left, .status-right {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.status-right { gap: 10px; }
+
+.footer-prefs {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-bar .footer-sep { margin: 0 2px; }
+
+.status-right a { color: var(--text-secondary); text-decoration: none; }
+.status-right a:hover { color: var(--text); }
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--verdict-quality);
+}
+
+.status-dot.is-ready { background: var(--scale-ok); }
+.status-dot.is-busy { background: var(--accent); }
+.status-dot.is-error { background: var(--state-error); }
+
+.engine-status { display: inline-flex; align-items: center; gap: 8px; }
+
+.engine-bar {
+  width: 70px;
+  height: 4px;
+  border-radius: 4px;
+  background: var(--bg-input);
+  overflow: hidden;
+}
+
+.engine-bar > span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: var(--accent);
+  animation: load 1.1s ease-out infinite;
+}
+
+@keyframes load {
+  0% { transform: translateX(-80%); }
+  100% { transform: translateX(220%); }
+}
+
+.operator { display: inline-flex; align-items: center; gap: 6px; }
+
+.operator input {
+  background: var(--bg-input);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-control);
+  height: 26px;
+  padding: 0 8px;
+}
+
+/* ---------------------------------------------------------------- result head */
+/* ---------------------------------------------------------------- dialogs and feedback */
+
+dialog {
+  color: var(--text);
+  background: var(--bg-card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
+}
+
+dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
+
+.progress-dialog {
+  position: fixed;
+  inset: 0;
+  width: min(560px, calc(100vw - 16px));
+  max-height: calc(100vh - 80px);
+  box-sizing: border-box;
+  margin: auto;
+  padding: 18px;
+  overflow: auto;
+}
+
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dialog-head h2,
+.confirm-dialog h2 { margin: 0 0 4px; font-size: 19px; }
+.dialog-head p { margin: 0 0 12px; }
+
+.dialog-close {
+  flex: none;
+  width: 32px;
+  padding: 0;
+  font-size: 19px;
+}
+
+.progress-metrics {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
+.progress-percent { font-size: 32px; line-height: 1; font-weight: 600; }
+.progress-value { color: var(--text-secondary); font-size: var(--text-body); }
+.progress-estimate { margin-left: auto; color: var(--text-secondary); font-size: 12px; }
+.progress-estimate[hidden] { display: none; }
+
+.progress-track {
+  position: relative;
+  width: 100%;
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg-input);
+}
+
+.progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 200ms ease-out;
+}
+
+.progress-track.is-indeterminate .progress-fill {
+  width: 34% !important;
+  animation: progress-indeterminate 1.15s ease-in-out infinite;
+}
+
+@keyframes progress-indeterminate {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(300%); }
+}
+
+.progress-stage { margin: 7px 0 14px; color: var(--text-secondary); font-size: 13px; }
+
+.progress-counts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.progress-counts > div {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 9px;
+  background: var(--bg-input);
+}
+
+.progress-counts dt {
+  min-height: 2.6em;
+  font-size: 10px;
+  line-height: 1.3;
+  font-weight: 600;
+  overflow-wrap: normal;
+  word-break: keep-all;
+  hyphens: none;
+}
+
+.progress-counts dd {
+  margin: 4px 0 0;
+  font-size: 21px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-counts .tone-detected { color: var(--verdict-detected); }
+.progress-counts .tone-uncertain { color: var(--verdict-uncertain); }
+.progress-counts .tone-not_detected { color: var(--verdict-not-detected); }
+.progress-counts .tone-quality { color: var(--verdict-quality); }
+.progress-dialog > p:last-child { margin-bottom: 0; }
+.params-validation-note { font-weight: 600; color: var(--verdict-uncertain); }
+
+.progress-error { color: var(--state-error); font-size: var(--text-ui); }
+.progress-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+
+.confirm-dialog { width: min(440px, calc(100vw - 32px)); padding: 20px; }
+.confirm-dialog p { font-size: var(--text-body); line-height: 1.5; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.destructive { background: var(--state-error); color: white; border-color: transparent; }
+.destructive:hover { filter: brightness(0.92); }
+.algo-pick { display: inline-flex; align-items: center; gap: 2px; }
+
+/* ---------------------------------------------------------------- session menu */
+
+/* A fixed 340 px menu: a session name is a date and a time, the numbers go under it,
+   and the three actions are icons. With text buttons the name wrapped onto a second
+   line, ran into "Zmień nazwę" and gave the menu a horizontal scrollbar. */
+#session-menu .menu-list {
+  /* The Session menu sits on the left of the toolbar now, so it drops down from its
+     left edge; right aligned it would hang off the left side of the content area. */
+  left: 0;
+  right: auto;
+  width: 340px;
+  min-width: 340px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.session-name-row { padding: 2px 6px 6px; }
+
+.session-name-row input,
+.session-rename-input {
+  width: 100%;
+  box-sizing: border-box;
+  font-size: var(--text-ui);
+}
+
+.session-list { max-height: 280px; overflow-y: auto; overflow-x: hidden; }
+
+.menu-separator {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 6px 0;
+}
+
+.menu-destructive { color: var(--state-error); }
+
+/* ---------------------------------------------------------------- PeakWise own */
 
 .electrode-group { margin-bottom: 12px; }
 
@@ -109,116 +876,13 @@ body.app-body {
 .file-row .chip { flex: none; }
 
 /* Toolbar ---------------------------------------------------------------- */
-
-.main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: var(--bg-toolbar);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
-  border-bottom: 1px solid var(--hairline);
-  font-size: var(--text-ui);
-}
-
-.toolbar .grow { flex: 1; }
-
-.toolbar-field {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Selects are styled once, in shared/ui.css, the same way ITIES Detect gets them: the
-   native chrome is replaced by a surface plus a drawn chevron. Repeating `background`
-   here would win on specificity and erase that chevron, so only the text input is
-   styled locally. */
-.toolbar-field input {
-  background: var(--bg-input);
-  border: 1px solid var(--hairline);
-  border-radius: var(--radius-control);
-  min-height: 28px;
-  padding: 2px 8px;
-}
-
-.menu { position: relative; }
-
-.menu-list {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
-  background: var(--bg-card);
-  box-shadow: var(--shadow-card);
-  border-radius: var(--radius-control);
-  min-width: 190px;
-  padding: 4px;
-  z-index: 20;
-  display: none;
-}
-
-.menu.is-open .menu-list { display: block; }
-
-.menu-list button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: transparent;
-}
-
-.engine-status {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: var(--text-ui);
-  color: var(--text-secondary);
-  min-height: 32px;
-}
-
-.engine-bar {
-  width: 88px;
-  height: 4px;
-  border-radius: 4px;
-  background: var(--bg-input);
-  overflow: hidden;
-  flex: none;
-}
-
-.engine-bar > span {
-  display: block;
-  height: 100%;
-  width: 40%;
-  background: var(--accent);
-  animation: load 1.1s ease-out infinite;
-}
-
-@keyframes load {
-  0% { transform: translateX(-80%); }
-  100% { transform: translateX(220%); }
-}
-
-/* Content ---------------------------------------------------------------- */
-
-.content {
-  flex: 1;
+.electrode-list {
   overflow: auto;
-  padding: 16px 20px 32px;
-  outline: none;
+  padding: 0 8px 16px;
+  flex: 1;
 }
 
-.drop-target.is-over {
-  outline: 2px dashed var(--accent);
-  outline-offset: -8px;
-}
-
+.sidebar-empty { padding: 12px; font-size: var(--text-ui); }
 .empty-drop {
   max-width: 36rem;
   margin: 12vh auto 0;
@@ -439,27 +1103,39 @@ body.app-body {
 
 /* Shell ------------------------------------------------------------------ */
 
-.drawer-toggle { display: none; }
-.sidebar-backdrop,
-.sidebar-backdrop[hidden] { display: none !important; }
 
-.app-footer { justify-content: space-between; padding-inline: 20px; }
-.app-footer label { display: inline-flex; align-items: center; gap: 6px; }
+/* The sidebar header carries the home icon. On a narrow screen the sidebar is a
+   drawer, so the toolbar keeps its own copy next to the List button. */
+.toolbar-home { display: none; }
 
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+@media (max-width: 1023px) {
+  .toolbar-home { display: inline-flex; }
+}
+
+@media (max-width: 1099px) {
+  .toolbar-spacer { flex-basis: 100%; height: 0; }
 }
 
 @media (max-width: 899px) {
+  .toolbar .algo-pick,
+  .toolbar #view-seg,
+  .toolbar #btn-analyze { display: none; }
+  .toolbar-spacer { flex-basis: auto; height: auto; }
+}
+
+@media (max-width: 1023px) {
+  /* On a narrow screen the whole page scrolls again: the sidebar is a drawer, the
+     footer follows the content, and a fixed window height would cut the result off. */
+  body.app-body {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
   .app {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
     height: auto;
-    min-height: calc(100vh - 52px);
+    min-height: 100vh;
   }
   .sidebar {
     position: fixed;
@@ -479,17 +1155,37 @@ body.app-body {
     background: rgba(0, 0, 0, 0.32);
     z-index: 25;
   }
-  .result-head { flex-direction: column; gap: 8px; }
-  .result-word { text-align: left; font-size: 26px; }
-  .read-row { grid-template-columns: 1fr; gap: 2px; }
-  .kv { grid-template-columns: 1fr; gap: 2px 0; }
-  .kv dd { margin-bottom: 6px; }
-  .content { padding: 12px 16px 28px; }
-  .session-table { display: block; overflow-x: auto; }
+  .analysis-params-form { grid-template-columns: repeat(2, minmax(150px, 1fr)); }
+}
+@media (max-width: 719px) {
+  .content { padding: 14px 16px 24px; }
+  .file-head { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .verdict-card { grid-template-columns: minmax(0, 1fr); }
+  .verdict-word { font-size: 26px; }
+  .verdict-part-auto { font-size: 26px; }
+  .file-title { font-size: 22px; }
+  .chart-host { min-height: 420px; }
+  .chart-buttons { margin-left: 0; }
+  .status-bar { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .status-left, .status-right { width: 100%; }
+  .analysis-params-form { grid-template-columns: 1fr; }
+  .analysis-params-form fieldset { grid-template-columns: 1fr 1fr; }
+  .progress-dialog { inset: 0; width: calc(100vw - 16px); margin: auto; }
+  .progress-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Print ------------------------------------------------------------------ */
+/* ---------------------------------------------------------------- full screen */
 
+.chart-card:fullscreen {
+  background: var(--bg-card);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card:fullscreen .chart-host { flex: 1; min-height: 0; }
+
+/* ---------------------------------------------------------------- print */
 @media print {
   body.printing .app,
   body.printing .site-footer,
@@ -539,3 +1235,6 @@ body.app-body {
   font-weight: 600;
 }
 .versions-page .use-ver:hover { background: var(--bg-hover); }
+
+/* Same owner decision as in ITIES (17.09): no status bar under the toolbar. */
+.summary-bar[hidden] { display: none; }

@@ -112,12 +112,41 @@ export function displayResult(file) {
 
 const COMPLETE = new Set(["ok"]);
 
+// The four buckets the sidebar list and the summary bar share. They are PeakWise's own
+// reading of a scan, not the ITIES verdicts: a complete peak pair, one branch only,
+// no peak on either branch, and a file the algorithm could not read at all.
+export const BUCKETS = {
+  pair: ["ok"],
+  partial: ["anodic_only", "cathodic_only"],
+  none: ["no_peaks"],
+  unreadable: ["too_few_points", "invalid", "error"],
+};
+
+export function bucketOf(status) {
+  if (!status) return null;
+  for (const [bucket, list] of Object.entries(BUCKETS)) if (list.includes(status)) return bucket;
+  return "unreadable";
+}
+
+// One pass over the files, so the bar and the list can never disagree. `pending`
+// counts the files that have no result yet and therefore belong to no bucket.
+export function bucketCounts(files) {
+  const counts = { pair: 0, partial: 0, none: 0, unreadable: 0, pending: 0 };
+  for (const file of files) {
+    const bucket = bucketOf(displayResult(file)?.status);
+    if (bucket) counts[bucket] += 1;
+    else counts.pending += 1;
+  }
+  return counts;
+}
+
 export function matchesFilter(file, filter) {
   const status = displayResult(file)?.status;
-  if (filter === "all") return true;
-  if (filter === "pair") return COMPLETE.has(status);
+  if (filter === "all" || !filter) return true;
+  // "incomplete" is the 1.0 name for everything that is not a clean pair. It stays
+  // understood so a session saved by the old build still opens on its own filter.
   if (filter === "incomplete") return !!status && !COMPLETE.has(status);
-  return true;
+  return bucketOf(status) === filter;
 }
 
 export function electrodeAggregate(files) {

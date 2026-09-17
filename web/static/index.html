@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title data-i18n-doc="hub.pageTitle">CV Analysers</title>
   <link rel="stylesheet" href="/shared/tokens.css">
   <link rel="stylesheet" href="/shared/ui.css">
@@ -17,7 +18,10 @@
     FINISH: unreviewed and undocumented is unfinished.
   -->
   <div class="hub">
-    <div class="hub-bar" id="hub-prefs"></div>
+    <div class="hub-bar">
+      <span class="page-back" id="hub-back"></span>
+      <span class="hub-prefs" id="hub-prefs"></span>
+    </div>
     <main class="hub-main">
       <h1 data-i18n="hub.title">CV Analysers</h1>
       <p class="hub-lead" data-i18n="hub.lead">Laboratory tools for cyclic voltammetry analysis.</p>
@@ -25,12 +29,13 @@
         <a class="hub-tile" href="/ities/">
           <div class="hub-icon">
             <img src="/assets/ities_icon_256.png"
-                 srcset="/assets/ities_icon_256.png 256w, /assets/ities_icon_512.png 512w"
+                 srcset="/assets/ities_icon_256.png 256w, /assets/ities_icon_512.png 512w, /assets/ities_icon_1024.png 1024w"
                  sizes="128px" width="128" height="128" alt="ITIES Detect">
           </div>
           <h2>ITIES Detect</h2>
           <p data-i18n="hub.ities.desc">Amphetamine detection from CV curves (ITIES).</p>
           <span class="hub-badge" id="ities-ver">v1.1</span>
+          <span class="hub-session muted" id="ities-session"></span>
         </a>
         <a class="hub-tile" href="/peakwise/">
           <div class="hub-icon">
@@ -41,20 +46,129 @@
           <h2 id="tile2-name">PeakWise</h2>
           <p data-i18n="hub.peakwise.desc">Anodic and cathodic peaks of 3D printed electrodes.</p>
           <span class="hub-badge" id="peakwise-ver">v1.0</span>
+          <span class="hub-session muted" id="peakwise-session"></span>
         </a>
       </div>
     </main>
     <footer class="site-footer">
+      <span class="partner-logos" id="partner-logos"></span>
       <a href="/ities/versions.html" data-i18n="common.versions">Version history</a>
+      <a href="/logout" data-i18n="common.logout">Log out</a>
+      <span class="footer-sep" aria-hidden="true">|</span>
       <span data-i18n="common.year">2026</span>
     </footer>
   </div>
   <script type="module">
     import { HUB_TILE_2_NAME } from "/shared/config.js";
     import { mountPrefs } from "/shared/prefs.js";
+    import { mountPartners } from "/shared/partners.js";
+    import { mountBackLink } from "/shared/backlink.js";
+    import { installTooltips } from "/shared/tooltip.js";
+    import { onLangChange, t } from "/shared/i18n.js";
 
     document.getElementById("tile2-name").textContent = HUB_TILE_2_NAME;
     mountPrefs(document.getElementById("hub-prefs"));
+    // Only for someone who came here from an analyser: for everybody else the hub is
+    // the starting point and has nowhere to go back to.
+    mountBackLink(document.getElementById("hub-back"));
+    installTooltips();
+    mountPartners(document.getElementById("partner-logos"));
+    // A tile is a door, nothing else: the whole tile, icon included, opens its
+    // application. The logo preview lives in the sidebar header of the analysers.
+    function paintTileTips() {
+      for (const [id, name] of [["/ities/", "ITIES Detect"], ["/peakwise/", HUB_TILE_2_NAME]]) {
+        const tile = document.querySelector(`a.hub-tile[href="${id}"]`);
+        if (tile) tile.dataset.tooltipText = t("hub.openApp", { app: name });
+      }
+    }
+    paintTileTips();
+    onLangChange(paintTileTips);
+
+    // Each tile says how many files are waiting in that application. The hub only
+    // reads; a database that is not there is left alone, not created.
+    function openExisting(name) {
+      return new Promise((resolve) => {
+        let created = false;
+        let request;
+        try {
+          request = indexedDB.open(name);
+        } catch (_) {
+          resolve(null);
+          return;
+        }
+        request.onupgradeneeded = () => {
+          created = true;
+        };
+        request.onerror = () => resolve(null);
+        request.onsuccess = () => {
+          const db = request.result;
+          if (created) {
+            db.close();
+            try {
+              indexedDB.deleteDatabase(name);
+            } catch (_) {
+              /* nothing to undo */
+            }
+            resolve(null);
+            return;
+          }
+          resolve(db);
+        };
+      });
+    }
+
+    function get(db, store, key) {
+      return new Promise((resolve) => {
+        if (!db.objectStoreNames.contains(store)) {
+          resolve(null);
+          return;
+        }
+        const request = db.transaction(store, "readonly").objectStore(store).get(key);
+        request.onsuccess = () => resolve(request.result || null);
+        request.onerror = () => resolve(null);
+      });
+    }
+
+    async function itiesFiles() {
+      const db = await openExisting("ities-detect");
+      if (!db) return null;
+      try {
+        const meta = await get(db, "session", "meta");
+        if (!meta?.currentId) return null;
+        const record = await get(db, "sessions", meta.currentId);
+        return record?.payload?.files?.length ?? null;
+      } finally {
+        db.close();
+      }
+    }
+
+    async function peakwiseFiles() {
+      const db = await openExisting("peakwise");
+      if (!db) return null;
+      try {
+        const payload = await get(db, "session", "current");
+        return payload?.files?.length ?? null;
+      } finally {
+        db.close();
+      }
+    }
+
+    let counts = { ities: null, peakwise: null };
+
+    function paintCounts() {
+      for (const [id, value] of [["ities-session", counts.ities], ["peakwise-session", counts.peakwise]]) {
+        document.getElementById(id).textContent =
+          value == null || value === 0 ? t("hub.noFiles") : t("hub.files", { n: value });
+      }
+    }
+
+    onLangChange(paintCounts);
+    Promise.all([itiesFiles(), peakwiseFiles()])
+      .then(([ities, peakwise]) => {
+        counts = { ities, peakwise };
+        paintCounts();
+      })
+      .catch(() => paintCounts());
 
     fetch("/api/versions").then((r) => r.json()).then((list) => {
       const d = list.find((e) => e.default) || list[0];

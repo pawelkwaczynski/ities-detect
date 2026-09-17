@@ -15,6 +15,7 @@ NEED_PKGS=(numpy scipy pandas)
 CACHE_CANDIDATES=(
   "${PYODIDE_WHEEL_CACHE:-}"
   "$TOOLS/.pkg_cache"
+  "/private/tmp/claude-501/-Users-pawelkwaczynski/1ed5a62a-84e1-48bb-9c2a-40da7de36122/scratchpad/pyodide_test/pkg_cache"
 )
 CDN_BASES=(
   "https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full"

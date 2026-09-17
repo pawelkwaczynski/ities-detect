@@ -11,6 +11,7 @@ let pyodide = null;
 let loadedVersion = null;
 let loadedSha256 = null;
 let constants = null;
+let originalConstants = null;
 let usingCdn = false;
 let queue = Promise.resolve();
 
@@ -18,8 +19,8 @@ function post(msg) {
   self.postMessage(msg);
 }
 
-function stage(name, detail) {
-  post({ type: "status", stage: name, detail: detail || name, cdn: usingCdn });
+function stage(name, detail, extra = {}) {
+  post({ type: "status", stage: name, detail: detail || name, cdn: usingCdn, ...extra });
 }
 
 async function sha256Hex(buffer) {
@@ -78,7 +79,7 @@ function pickEntry(manifest, version) {
 }
 
 async function loadAlgorithm(entry) {
-  stage("algorithm", "algorytm " + entry.version);
+  stage("algorithm", "algorytm " + entry.version, { version: entry.version });
   const res = await fetch("/algo/" + entry.file, { cache: "no-store" });
   if (!res.ok) throw new Error("Nie udało się pobrać " + entry.file);
   const buf = await res.arrayBuffer();
@@ -95,10 +96,23 @@ async function loadAlgorithm(entry) {
   const source = stubMatplotlib(new TextDecoder("utf-8").decode(buf));
   pyodide.runPython(source);
   pyodide.runPython(ANALYZE_HELPERS_PY);
-  const raw = pyodide.runPython("algo_constants()");
+  const raw = pyodide.runPython("remember_analysis_params()");
   constants = JSON.parse(raw);
+  originalConstants = JSON.parse(JSON.stringify(constants));
   loadedVersion = entry.version;
   loadedSha256 = sha;
+}
+
+async function applyParams(overrides) {
+  if (!pyodide || !originalConstants) throw new Error("Engine is not ready");
+  pyodide.globals.set("_ities_param_overrides", overrides ? JSON.stringify(overrides) : "");
+  const raw = pyodide.runPython("apply_analysis_params(_ities_param_overrides or None)");
+  constants = JSON.parse(raw);
+  post({
+    type: "params",
+    overrides: overrides || null,
+    constants,
+  });
 }
 
 async function init(version, { forceCdn } = {}) {
@@ -119,8 +133,15 @@ async function init(version, { forceCdn } = {}) {
   } else if (!pyodide) {
     await bootPyodide();
   }
-  stage("packages", "pakiety numpy, scipy, pandas");
-  await pyodide.loadPackage(PACKAGES, { messageCallback: () => {} });
+  stage("packages", "pakiety numpy, scipy, pandas", { loaded: 0, total: PACKAGES.length });
+  for (let index = 0; index < PACKAGES.length; index += 1) {
+    await pyodide.loadPackage([PACKAGES[index]], { messageCallback: () => {} });
+    stage("packages", "pakiety numpy, scipy, pandas", {
+      loaded: index + 1,
+      total: PACKAGES.length,
+      package: PACKAGES[index],
+    });
+  }
   const manifest = await fetchVersions();
   const entry = pickEntry(manifest, version);
   await loadAlgorithm(entry);
@@ -180,6 +201,18 @@ self.onmessage = (ev) => {
         post({
           type: "error",
           id: msg.id,
+          message: String(err && err.message ? err.message : err),
+        })
+      );
+    return;
+  }
+  if (msg.type === "params") {
+    queue = queue
+      .then(() => applyParams(msg.overrides || null))
+      .catch((err) =>
+        post({
+          type: "error",
+          id: "__params__",
           message: String(err && err.message ? err.message : err),
         })
       );

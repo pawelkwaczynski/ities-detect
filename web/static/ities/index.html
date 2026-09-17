@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
   <title>ITIES Detect</title>
   <link rel="stylesheet" href="/shared/tokens.css">
   <link rel="stylesheet" href="/shared/ui.css">
@@ -15,7 +16,7 @@
     OWN-WORLD: macOS-like panels, system font, hairlines, no fake window lights.
     STORY: drop files or a folder, the tree fills and computes itself, the result screen
            answers in three seconds and keeps the full record folded underneath.
-    FIRST VIEWPORT: sample tree, toolbar, file header, four KPI cards, the voltammogram.
+    FIRST VIEWPORT: sample tree, toolbar, file header, the verdict card, the voltammogram.
     FORM: Operate, pinned by SPEC_APLIKACJI.md and the round 3 brief.
     FINISH: unreviewed and undocumented is unfinished.
   -->
@@ -23,52 +24,200 @@
     <div class="sidebar-backdrop" id="backdrop" hidden></div>
     <aside class="sidebar" id="sidebar" data-i18n-aria="sidebar.label" aria-label="File list"></aside>
     <div class="main">
+      <!--
+        Seven top level controls, in one row (brief 1.4 addendum 2, point Q): the
+        narrow screen lead (list and home), Session, Recompute, Algorithm, Files or
+        Table, Expert mode, Export. Counters and the clear button left the toolbar:
+        the counters live in the sidebar summary, clearing lives in the Session menu.
+      -->
       <header class="toolbar">
-        <button type="button" class="drawer-toggle" id="drawer-btn" data-i18n="toolbar.list" data-i18n-aria="sidebar.label">List</button>
-        <button type="button" class="primary" id="btn-add" data-i18n="toolbar.import">Import measurements</button>
-        <button type="button" id="btn-add-folder" data-i18n="toolbar.addFolder">Add folder</button>
-        <input id="file-input" class="visually-hidden" type="file" accept=".txt,text/plain" multiple>
-        <input id="folder-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
-        <button type="button" id="btn-analyze" data-i18n="toolbar.analyseSeries" disabled>Analyse series</button>
-        <span class="file-count" id="file-count" hidden></span>
+        <span class="toolbar-lead">
+          <button type="button" class="drawer-toggle" id="drawer-btn" data-i18n="toolbar.list" data-i18n-aria="sidebar.label">List</button>
+          <a class="icon-link toolbar-home" id="toolbar-home" href="/" data-tooltip-key="tip.home" data-i18n-aria="tip.homeLabel" aria-label="CV Analysers">
+            <svg viewBox="0 0 18 18" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" d="M2.5 7.8 9 2.5l6.5 5.3V15a.5.5 0 0 1-.5.5h-3.5v-4.2h-5v4.2H3a.5.5 0 0 1-.5-.5z"/></svg>
+          </a>
+        </span>
+        <div class="menu" id="session-menu">
+          <button type="button" id="btn-session" aria-haspopup="true" aria-expanded="false" data-i18n="session.menu" data-tooltip-key="tip.session">Session</button>
+          <div class="menu-list" role="menu">
+            <p class="menu-heading" data-i18n="session.currentLabel">Current session</p>
+            <div class="session-name-row">
+              <input type="text" id="session-name" data-i18n-aria="session.nameLabel" aria-label="Session name">
+            </div>
+            <button type="button" role="menuitem" id="session-new" data-i18n="session.new">New session</button>
+            <button type="button" role="menuitem" id="session-save-file" data-i18n="session.saveFile">Save session to a file</button>
+            <button type="button" role="menuitem" id="session-load-file" data-i18n="session.loadFile">Load session from a file</button>
+            <input id="session-file-input" class="visually-hidden" type="file" accept=".json,application/json">
+            <p class="menu-heading" data-i18n="session.savedLabel">Saved sessions</p>
+            <div id="session-list" class="session-list"></div>
+            <hr class="menu-separator">
+            <button type="button" role="menuitem" class="menu-destructive" id="session-clear" data-i18n="session.clear" disabled>Clear session</button>
+          </div>
+        </div>
+        <button type="button" id="btn-analyze" data-i18n="toolbar.recompute" data-tooltip-key="tip.recompute" disabled>Recompute all</button>
         <label class="visually-hidden" for="algo-version" data-i18n="toolbar.algoVersionLabel">Algorithm version</label>
-        <select id="algo-version" data-i18n-aria="toolbar.algoVersionLabel" aria-label="Algorithm version"></select>
+        <span class="algo-pick">
+          <select id="algo-version" data-i18n-aria="toolbar.algoVersionLabel" aria-label="Algorithm version"></select>
+          <button type="button" class="info-button" id="algo-info" data-tooltip-click aria-expanded="false" data-i18n-aria="algo.info.label" aria-label="About this algorithm version">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.1v4M8 4.7h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+        </span>
         <div class="seg" id="view-seg" role="group" data-i18n-aria="toolbar.view" aria-label="View">
           <button type="button" id="view-files" aria-pressed="true" data-i18n="toolbar.viewFiles">Files</button>
           <button type="button" id="view-table" aria-pressed="false" data-i18n="toolbar.viewTable">Table</button>
         </div>
-        <div class="toolbar-right">
-          <div class="toolbar-prefs" id="app-prefs"></div>
-          <label class="switch" id="expert-switch">
+        <span class="toolbar-prefs" id="app-prefs"></span>
+        <span class="toolbar-spacer" aria-hidden="true"></span>
+        <div class="expert-help">
+          <label class="switch" id="expert-switch" data-tooltip-key="tip.expert">
             <input type="checkbox" id="expert-mode">
             <span class="switch-track"></span>
             <span data-i18n="toolbar.expert">Expert mode</span>
           </label>
-          <div class="menu" id="export-menu">
-            <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false" data-i18n="toolbar.export">Export</button>
-            <div class="menu-list" role="menu">
-              <button type="button" role="menuitem" id="export-csv" data-i18n="toolbar.exportCsv">Session CSV</button>
-              <button type="button" role="menuitem" id="export-pdf" data-i18n="toolbar.exportPdf">PDF report (print)</button>
-            </div>
+          <button type="button" class="info-button" id="expert-info" data-tooltip-key="tip.expert" data-tooltip-click aria-expanded="false" data-i18n-aria="common.info" aria-label="More information">
+            <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 7.1v4M8 4.7h.01" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <div class="menu" id="export-menu">
+          <button type="button" id="btn-export" aria-haspopup="true" aria-expanded="false" data-i18n="toolbar.export" data-tooltip-key="tip.export">Export</button>
+          <div class="menu-list" role="menu">
+            <button type="button" role="menuitem" id="export-csv" data-i18n="toolbar.exportCsv">Session CSV</button>
+            <button type="button" role="menuitem" id="export-csv-selected"></button>
+            <p class="menu-heading" data-i18n="export.pdfScope">PDF report scope</p>
+            <button type="button" role="menuitem" id="export-pdf-all"></button>
+            <button type="button" role="menuitem" id="export-pdf-filtered"></button>
+            <button type="button" role="menuitem" id="export-pdf-selected"></button>
+            <button type="button" role="menuitem" id="export-pdf-sample"></button>
+            <p class="menu-note" data-i18n="export.backgroundHint">Turn on background graphics in the print dialog, otherwise the charts will be pale.</p>
           </div>
         </div>
       </header>
+      <!--
+        The summary bar (addendum 4, point CC): its own strip under the toolbar, not a
+        part of it and not a part of the scrolling content. Every member is the filter
+        for its verdict and shares one state with the segmented control in the sidebar.
+      -->
+      <div class="summary-bar" id="summary-bar" role="group" hidden data-i18n-aria="sidebar.summary" aria-label="Verdict filters" hidden></div>
+      <input id="file-input" class="visually-hidden" type="file" accept=".txt,text/plain" multiple>
+      <input id="folder-input" class="visually-hidden" type="file" webkitdirectory directory multiple>
+      <details class="analysis-params" id="analysis-params" hidden>
+        <summary data-tooltip-key="tip.analysisParams">
+          <span data-i18n="analysisParams.title">Analysis parameters</span>
+          <span class="muted" id="analysis-params-mode" data-i18n="analysisParams.defaultState">Defaults (validated 16.09.2026)</span>
+        </summary>
+        <form id="analysis-params-form" class="analysis-params-form" novalidate>
+          <label><span data-i18n="analysisParams.detected">DETECTED tolerance</span><span class="input-with-unit"><input id="param-detected" type="number" step="0.1" min="1" max="30" required><span>mV</span></span><span class="field-error" id="error-detected"></span></label>
+          <label><span data-i18n="analysisParams.review">EXPERT REVIEW tolerance</span><span class="input-with-unit"><input id="param-review" type="number" step="0.1" min="1" max="30" required><span>mV</span></span><span class="field-error" id="error-review"></span></label>
+          <label><span data-i18n="analysisParams.target">Amphetamine reference ΔE_s</span><span class="input-with-unit"><input id="param-target" type="number" step="0.001" min="0.3" max="0.4" required><span>V</span></span><span class="field-error" id="error-target"></span></label>
+          <fieldset>
+            <legend data-i18n="analysisParams.forward">TPrA+ forward window</legend>
+            <label><span data-i18n="analysisParams.from">from</span><span class="input-with-unit"><input id="param-pos-from" type="number" step="0.001" min="-1" max="1" required><span>V</span></span></label>
+            <label><span data-i18n="analysisParams.to">to</span><span class="input-with-unit"><input id="param-pos-to" type="number" step="0.001" min="-1" max="1" required><span>V</span></span></label>
+            <span class="field-error" id="error-pos"></span>
+          </fieldset>
+          <fieldset>
+            <legend data-i18n="analysisParams.reverse">TPrA− reverse window</legend>
+            <label><span data-i18n="analysisParams.from">from</span><span class="input-with-unit"><input id="param-neg-from" type="number" step="0.001" min="-1" max="1" required><span>V</span></span></label>
+            <label><span data-i18n="analysisParams.to">to</span><span class="input-with-unit"><input id="param-neg-to" type="number" step="0.001" min="-1" max="1" required><span>V</span></span></label>
+            <span class="field-error" id="error-neg"></span>
+          </fieldset>
+          <div class="analysis-params-actions">
+            <button type="submit" class="primary" id="params-apply" data-i18n="analysisParams.apply">Apply and recompute</button>
+            <button type="button" id="params-reset" data-i18n="analysisParams.reset">Restore defaults</button>
+          </div>
+          <p class="params-error" id="params-error" aria-live="polite"></p>
+        </form>
+      </details>
+      <div class="params-bar" id="params-bar" hidden role="status">
+        <span id="params-bar-text"></span>
+        <button type="button" id="params-bar-reset" data-i18n="analysisParams.reset">Restore defaults</button>
+      </div>
       <main class="content drop-target" id="content" tabindex="-1"></main>
+      <!--
+        The footer holds the rare settings (brief 1.4 addendum 2, point S): state on
+        the left, language, theme, operator, partners and the way out on the right.
+      -->
       <footer class="status-bar">
         <span class="status-left">
           <span class="status-dot" id="status-dot"></span>
           <span class="engine-status" id="engine-status" aria-live="polite">Starting the engine</span>
           <span class="status-sep" aria-hidden="true">·</span>
           <span id="analysis-status" class="muted"></span>
+          <span id="session-saved" class="muted" aria-live="polite"></span>
         </span>
         <span class="status-right">
-          <label class="operator"><span data-i18n="toolbar.operator">Operator</span> <input type="text" id="operator" size="10" autocomplete="name"></label>
-          <a href="/ities/versions.html" data-i18n="common.versions">Version history</a>
+          <label class="operator"><span data-i18n="toolbar.operator">Operator</span> <input type="text" id="operator" size="10" autocomplete="name" data-tooltip-key="tip.operator"></label>
+          <span class="partner-logos" id="partner-logos"></span>
+          <a href="/ities/versions.html" data-tooltip-key="tip.versionsLink" data-i18n="common.versions">Version history</a>
+          <a href="/logout" data-i18n="common.logout">Log out</a>
           <span id="app-ver" class="muted"></span>
+          <span class="footer-sep" aria-hidden="true">|</span>
+          <span class="muted" data-i18n="common.year">2026</span>
         </span>
       </footer>
     </div>
   </div>
+  <dialog class="progress-dialog" id="batch-progress">
+    <div class="dialog-head">
+      <div><h2 id="progress-title" data-i18n="progress.title">Series analysis</h2><p id="progress-source" class="muted"></p></div>
+      <button type="button" class="dialog-close" id="progress-close" data-i18n-aria="common.close" aria-label="Close">×</button>
+    </div>
+    <div class="progress-metrics">
+      <strong class="progress-percent tabular" id="progress-percent">0 %</strong>
+      <span class="progress-value tabular" id="progress-value">0 of 0</span>
+      <span class="progress-estimate" id="progress-estimate" data-i18n="progress.approximate">approximate</span>
+    </div>
+    <div class="progress-track" id="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <span class="progress-fill" id="progress-fill"></span>
+    </div>
+    <p class="progress-stage" id="progress-stage"></p>
+    <dl class="progress-counts">
+      <div class="tone-detected"><dt data-i18n="verdict.detected.short">detected</dt><dd id="progress-detected">0</dd></div>
+      <div class="tone-uncertain"><dt data-i18n="verdict.uncertain.short">for review</dt><dd id="progress-review">0</dd></div>
+      <div class="tone-not_detected"><dt data-i18n="verdict.not_detected.short">not detected</dt><dd id="progress-not-detected">0</dd></div>
+      <div class="tone-quality"><dt data-i18n="progress.unsuitableShort">not assessable</dt><dd id="progress-unsuitable">0</dd></div>
+      <div class="tone-quality"><dt data-i18n="progress.errorShort">errors</dt><dd id="progress-errors">0</dd></div>
+    </dl>
+    <p id="progress-skipped" class="muted" hidden></p>
+    <p id="progress-engine" class="muted"></p>
+    <p id="progress-note" class="muted" hidden></p>
+    <p id="progress-error" class="progress-error" role="alert" hidden></p>
+    <div class="progress-actions">
+      <button type="button" id="progress-abort" data-i18n="progress.abort">Stop</button>
+      <button type="button" id="progress-retry" data-i18n="engine.retry" hidden>Try again</button>
+      <button type="button" id="progress-cdn" data-i18n="engine.useCdn" hidden>Use CDN</button>
+    </div>
+    <p id="progress-validation" class="params-validation-note" hidden data-i18n="params.outsideValidation">Custom parameters, outside the validation of 16.09.2026.</p>
+  </dialog>
+  <dialog class="move-menu" id="move-menu" aria-labelledby="move-menu-title">
+    <div class="move-menu-head">
+      <strong id="move-menu-title"></strong>
+      <button type="button" class="dialog-close" id="move-menu-close" data-i18n-aria="common.close" aria-label="Close">×</button>
+    </div>
+    <div id="move-menu-list" role="menu"></div>
+  </dialog>
+  <dialog class="confirm-dialog" id="choice-dialog">
+    <form method="dialog">
+      <h2 id="choice-title"></h2>
+      <p id="choice-message"></p>
+      <div class="dialog-actions">
+        <button type="button" class="primary" id="choice-first"></button>
+        <button type="button" id="choice-second"></button>
+        <button type="submit" value="cancel" id="choice-cancel" data-i18n="session.keep">Keep</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog class="confirm-dialog" id="confirm-dialog">
+    <form method="dialog">
+      <h2 id="confirm-title"></h2>
+      <p id="confirm-message"></p>
+      <div class="dialog-actions">
+        <button type="button" class="destructive" id="confirm-accept"></button>
+        <button type="submit" value="cancel" id="confirm-cancel" data-i18n="session.keep">Keep</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="undo-toast" id="undo-toast" role="status" hidden><span id="undo-message"></span><button type="button" id="undo-action" data-i18n="session.undo">Undo</button></div>
   <div id="print-root" hidden></div>
   <div id="live-results" class="visually-hidden" aria-live="polite"></div>
   <script type="module" src="/ities/app.js"></script>

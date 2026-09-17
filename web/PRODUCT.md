@@ -1,14 +1,16 @@
 # Product
 
+<!-- impeccable:product-schema 1 -->
+
 ## Platform
 
 web
 
 ## Stack
-Plain static HTML/CSS/JS modules (no build step, no framework) + Pyodide (Python in WebAssembly) in a Web Worker for the analysis; a minimal Flask/gunicorn server on the Mikrus Frog VPS (256 MB RAM, Alpine 3.23, Python 3.12) only serves files and a version manifest. Chosen because the server cannot afford numpy/scipy in RAM, the algorithm must stay 1:1 with the lab notebook (proven: Pyodide result == CPython result to 1e-9 on test files), and raw measurement files must be able to stay on the user's computer.
+delegated: plain static HTML/CSS/JS modules (no build step, no framework) + Pyodide (Python in WebAssembly) in a Web Worker for the analysis; a minimal Flask/gunicorn server on the Mikrus Frog VPS (256 MB RAM, Alpine 3.23, Python 3.12) only serves files and a version manifest. Chosen because the server cannot afford numpy/scipy in RAM, the algorithm must stay 1:1 with the lab notebook (proven: Pyodide result == CPython result to 1e-9 on test files), and raw measurement files must be able to stay on the user's computer.
 
 ## Users
-Assumed from the brief, not interviewed. Primary: the electrochemistry lab of prof. Łukasz Półtorak (University of Łódź) analysing cyclic voltammetry (CV) files exported from a Metrohm Autolab / NOVA potentiostat, several to a few hundred TXT files per session, on a lab PC with Chrome/Edge. Secondary (later): police forensic technicians who need a verdict per sample and a printable report; they may not be allowed to upload files to the internet.
+[INFERRED from the brief, not interviewed] Primary: the electrochemistry lab of prof. Łukasz Półtorak (University of Łódź) analysing cyclic voltammetry (CV) files exported from a Metrohm Autolab / NOVA potentiostat, several to a few hundred TXT files per session, on a lab PC with Chrome/Edge. Secondary (later): police forensic technicians who need a verdict per sample and a printable report; they may not be allowed to upload files to the internet.
 
 ## Product Purpose
 Turn a CV file into a defensible verdict on amphetamine presence (ITIES method: ion transfer across a liquid/liquid interface, TPrA+ as internal standard, ΔE_s = 0.350 V criterion) with the evidence shown (points 1-4 on the curve, ΔE_s, Ip, concentration) and full traceability (algorithm version + hashes). Success: a lab member gets the same result as the reference notebook in seconds, understands why, and can print or export it.
@@ -22,7 +24,7 @@ Files: NOVA TXT exports, two variants (";" separator with decimal comma and Scan
 ## Capabilities and Constraints
 - Algorithm versions are frozen Python files in `algo/` (v1.0 = notebook state of 2026-08-20, v1.1 = 2026-09-16 diagnostics); `algo/versions.json` is the manifest; the UI must show the version and its sha256 on every result and report.
 - Measured on lab-labelled data (16.09.2026, v1.0/v1.1): 121/293 positive files detected (41.3 %), 0/147 negatives and 0/45 neutrals falsely detected; only 26 negatives reached the ΔE_s criterion. The UI must never claim more.
-- Not decided (open with the lab): widening the "uncertain" band from 15 to 30 mV; a TPrA identity test; the fate of sample 73-5. The UI keeps thresholds as displayed constants of the loaded algorithm version, never editable in the UI.
+- Not decided (open with the lab): widening the "uncertain" band from 15 to 30 mV; a TPrA identity test; the fate of sample 73-5. The UI shows the thresholds of the loaded algorithm version as constants. Since 1.3.0 (owner's decision, 2026-09-17) an expert can override tolerances, the target ΔE_s and the TPrA windows for the current session only: the override lives under expert mode, is hard-bounded, is not remembered across reloads, and every result computed with it is marked "custom parameters, outside the validation of 2026-09-16" on screen, in the table, in CSV and in the PDF report.
 - Server: 256 MB RAM shared with nothing else after StudentSpot is retired; ~2.5 GB disk; no root; Python 3.12 venv; port 20412 published as https://frog01-20412.wykr.es.
 - Data never has to leave the browser; sessions are kept client-side (IndexedDB) with export; no accounts in v1.
 - Terminology stays Polish in the UI (lab language); code and comments in English.

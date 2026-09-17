@@ -6,15 +6,15 @@ methods, warnings, CSV row and the 50 sampled baseline points per branch).
 
 ## Environment
 
-- date: 2026-09-16T21:29:55.568Z
+- date: 2026-09-17T21:39:52.448Z
 - pyodide: 314.0.7
 - python (wasm): 3.14.2, numpy 2.4.6, scipy 1.18.0, pandas 3.0.2
-- python (cpython baseline): CPython 3.14.7 (numpy 2.4.6, scipy 1.18.0, pandas 3.0.5)
+- python (cpython baseline): see BUILD_REPORT.md
 - algo 1.0, file sha256 2d021d6e1ded7b9822acb984c25cb8ca41242fe9ed937069d49378adf9b47eed
 - notebook cell sha256 9c0340708dcb31efac22c39a8fb5ccfb6ad9e73dbc37d66dc35de81ca48cb954
 - files on disk: 188, baseline records: 188
-- load pyodide 0.83 s, packages 0.89 s, analyze 0.95 s
-- rss at end: 830.9 MB
+- load pyodide 0.83 s, packages 0.87 s, analyze 0.96 s
+- rss at end: 817 MB
 
 ## Gate (abs tol 1e-9, rel tol 1e-12)
 
@@ -38,7 +38,7 @@ Cause, measured with tools/diagnose_file.mjs: the parsed E and I arrays are byte
 
 - files re-analysed: 188
 - files that now differ from the baseline: **156**
-- wall: 0.83 s
+- wall: 0.85 s
 PASS: the gate reports differences when the Ip definition is changed, so it can fail.
 
 ## Notebook agreement

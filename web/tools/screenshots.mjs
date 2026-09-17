@@ -7,6 +7,8 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { execFileSync } from "node:child_process";
+import { loginInBrowser, startTestServer, TEST_PORT } from "./test_server_boot.mjs";
 
 const require = createRequire(import.meta.url);
 const WebSocket = require("ws");
@@ -16,10 +18,14 @@ const ROOT = path.resolve(HERE, "..");
 const OUT = path.join(ROOT, "screenshots");
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const PORT = 9222;
-const BASE = "http://127.0.0.1:20412";
+// Set by startTestServer(): the screenshots run against their own gunicorn with a
+// throwaway login, never against the real server/auth.local.json.
+let BASE = `http://127.0.0.1:${TEST_PORT}`;
 const LAB = path.resolve(ROOT, "../07_etykiety_lab_20260916");
 const STAGE = path.join(OUT, ".files");
 const FOLDER_STAGE = path.join(OUT, ".folder");
+const CHROME_PROFILE = path.join(OUT, ".chrome");
+let screenshotCount = 0;
 
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(STAGE, { recursive: true });
@@ -33,6 +39,13 @@ const FILES = [
   fs.copyFileSync(path.join(LAB, rel), dest);
   return dest;
 });
+
+const TPRA_ONLY_FILE = (() => {
+  const name = "BRB pH 10 CV 50uM codeine + 50uM TPrA 2.txt";
+  const dest = path.join(STAGE, name);
+  fs.copyFileSync(path.join(LAB, "Negatywy", name), dest);
+  return dest;
+})();
 
 // A folder shaped like a real session: a root, a subfolder, and one file the app
 // cannot read, so the skip counter has something to count.
@@ -98,10 +111,25 @@ class Cdp {
       }
     });
   }
-  send(method, params = {}) {
+  // A command that never answers must not stop the run for ever: without a deadline a
+  // single stuck evaluation hangs the whole test with no output at all.
+  send(method, params = {}, timeoutMs = 60000) {
     const id = ++this.seq;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { resolve, reject });
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        reject(new Error(`CDP ${method} did not answer in ${timeoutMs} ms`));
+      }, timeoutMs);
+      this.pending.set(id, {
+        resolve: (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        reject: (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      });
       this.ws.send(JSON.stringify({ id, method, params }));
     });
   }
@@ -127,6 +155,7 @@ async function shot(cdp, name) {
   const { data } = await cdp.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const dest = path.join(OUT, name);
   fs.writeFileSync(dest, Buffer.from(data, "base64"));
+  screenshotCount += 1;
   console.log("wrote", path.basename(dest));
 }
 
@@ -145,12 +174,15 @@ async function waitExpr(cdp, expression, timeoutMs = 90000) {
   throw new Error("timeout waiting for " + expression);
 }
 
-async function setViewport(cdp, width, height, mobile) {
+// Chrome's mobile emulation lays the page out at its own visual viewport width while
+// the capture surface stays at the requested size, which produced shifted, clipped
+// phone screenshots. A plain narrow viewport at scale 1 matches what the CSS sees.
+async function setViewport(cdp, width, height) {
   await cdp.send("Emulation.setDeviceMetricsOverride", {
     width,
     height,
-    deviceScaleFactor: mobile ? 2 : 1,
-    mobile,
+    deviceScaleFactor: 1,
+    mobile: false,
   });
 }
 
@@ -176,19 +208,37 @@ const ENGINE_READY =
   "!!document.getElementById('engine-status') && " +
   "/Engine ready|Silnik gotowy/.test(document.getElementById('engine-status').textContent)";
 const HAS_VERDICT =
-  "!!document.querySelector('.verdict-badge') && document.querySelector('.verdict-badge').textContent.length > 2";
+  "!!document.querySelector('.verdict-word') && document.querySelector('.verdict-word').textContent.length > 2";
 
-async function loadThreeFiles(cdp) {
+async function setInputFiles(cdp, files) {
   const doc = await cdp.send("DOM.getDocument", { depth: 1 });
   const q = await cdp.send("DOM.querySelector", { nodeId: doc.root.nodeId, selector: "#file-input" });
-  await cdp.send("DOM.setFileInputFiles", { nodeId: q.nodeId, files: FILES });
+  await cdp.send("DOM.setFileInputFiles", { nodeId: q.nodeId, files });
+}
+
+async function loadThreeFiles(cdp, progressShot) {
+  await setInputFiles(cdp, FILES);
+  if (progressShot) {
+    await waitExpr(cdp, "document.getElementById('batch-progress').open", 30000);
+    await shot(cdp, progressShot);
+  }
   await waitExpr(cdp, HAS_VERDICT, 180000);
   await waitExpr(cdp, ENGINE_READY, 180000);
   await sleep(500);
 }
 
+async function clearThroughUi(cdp) {
+  await evaluate(cdp, "(() => { document.getElementById('btn-session').click(); document.getElementById('session-clear').click(); return true; })()");
+  await waitExpr(cdp, "document.getElementById('confirm-dialog').open", 10000);
+  await evaluate(cdp, "document.getElementById('confirm-accept').click();true");
+  await waitExpr(cdp, "document.querySelectorAll('.file-row').length === 0", 10000);
+}
+
 async function main() {
   const folder = stageFolder();
+  const server = await startTestServer();
+  BASE = server.base;
+  fs.rmSync(CHROME_PROFILE, { recursive: true, force: true });
   const chrome = spawn(
     CHROME,
     [
@@ -197,7 +247,7 @@ async function main() {
       "--disable-gpu",
       "--no-first-run",
       "--no-default-browser-check",
-      `--user-data-dir=${path.join(OUT, ".chrome")}`,
+      `--user-data-dir=${CHROME_PROFILE}`,
       "--window-size=1440,900",
       "about:blank",
     ],
@@ -207,6 +257,7 @@ async function main() {
     try {
       chrome.kill("SIGTERM");
     } catch (_) {}
+    server.stop();
   };
   process.on("exit", kill);
   process.on("SIGINT", () => {
@@ -230,9 +281,21 @@ async function main() {
     await cdp.send("Page.enable");
     await cdp.send("Runtime.enable");
     await cdp.send("DOM.enable");
+    // Headless Chrome does not consider its window focused, so element.focus() would
+    // move activeElement without firing focus events. The tooltips answer keyboard
+    // focus, and this is what makes that testable.
+    await cdp.send("Emulation.setFocusEmulationEnabled", { enabled: true });
+
+    // ---------------------------------------------------------------- login
+    await setViewport(cdp, 1440, 900);
+    for (const lang of ["pl", "en"]) {
+      await go(cdp, `${BASE}/login?lang=${lang}`);
+      await sleep(500);
+      await shot(cdp, `login-desktop-${lang}.png`);
+    }
+    await loginInBrowser(cdp, { evaluate, goto: go }, server, BASE);
 
     // ---------------------------------------------------------------- hub
-    await setViewport(cdp, 1440, 900, false);
     await go(cdp, BASE + "/");
     for (const lang of ["en", "pl"]) {
       await setPrefs(cdp, lang, "light");
@@ -245,12 +308,17 @@ async function main() {
     await evaluate(cdp, "indexedDB.deleteDatabase('ities-detect');true");
     await setPrefs(cdp, "en", "light");
     await reload(cdp);
+    await waitExpr(cdp, "document.getElementById('batch-progress').open", 30000);
+    await sleep(400);
+    await shot(cdp, "ities-engine-start-desktop-en.png");
     await waitExpr(cdp, ENGINE_READY);
+    await waitExpr(cdp, "!document.getElementById('batch-progress').open", 30000);
     await sleep(300);
     await shot(cdp, "ities-empty-desktop-en.png");
 
     // ------------------------------------------------- result, both languages and themes
-    await loadThreeFiles(cdp);
+    // The progress window is caught while it still counts, not after it closes.
+    await loadThreeFiles(cdp, "ities-progress-desktop-en.png");
     await shot(cdp, "ities-result-desktop-en-light.png");
     for (const [lang, theme] of [
       ["en", "dark"],
@@ -264,6 +332,51 @@ async function main() {
       await sleep(600);
       await shot(cdp, `ities-result-desktop-${lang}-${theme}.png`);
     }
+
+    // ------------------------------------------- toolbar, list summary, many files
+    // The shape of the interface after addendum 2 and 3: seven controls in the bar,
+    // the counters in the list, several files as cards and as one chart.
+    await setPrefs(cdp, "pl", "light");
+    await reload(cdp);
+    await waitExpr(cdp, HAS_VERDICT, 180000);
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    await sleep(500);
+    await shot(cdp, "ities-toolbar-desktop-pl.png");
+    await evaluate(cdp, `(() => {
+      document.querySelector('#summary-bar .stat-pill[data-filter="review"]')?.click();
+      return true;
+    })()`);
+    await sleep(500);
+    await shot(cdp, "ities-summary-filter-desktop-pl.png");
+    await evaluate(cdp, `(() => {
+      document.querySelector('#sidebar .filter-row[data-filter="all"]')?.click();
+      return true;
+    })()`);
+    await sleep(400);
+    await evaluate(cdp, `(() => {
+      const rows = [...document.querySelectorAll('#sidebar .file-item .file-row')];
+      rows[0].click();
+      rows[1].dispatchEvent(new MouseEvent('click', { bubbles: true, metaKey: true }));
+      return true;
+    })()`);
+    await sleep(1200);
+    await shot(cdp, "ities-multi-cards-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('multi-compare')?.click();true");
+    await sleep(1200);
+    await shot(cdp, "ities-multi-compare-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('multi-clear')?.click();true");
+    await sleep(500);
+
+    await setPrefs(cdp, "pl", "dark");
+    await reload(cdp);
+    await waitExpr(cdp, HAS_VERDICT, 180000);
+    await sleep(600);
+    await shot(cdp, "ities-sidebar-sections-desktop-pl-dark.png");
+    await setPrefs(cdp, "pl", "light");
+    await reload(cdp);
+    await waitExpr(cdp, HAS_VERDICT, 180000);
+    await sleep(400);
+    await shot(cdp, "ities-sidebar-sections-desktop-pl-light.png");
 
     // ---------------------------------------------------------------- table, expert
     await setPrefs(cdp, "pl", "light");
@@ -282,6 +395,103 @@ async function main() {
     );
     await sleep(700);
     await shot(cdp, "ities-expert-desktop-pl.png");
+
+    // Session parameters live under expert mode, so this shot belongs right here.
+    await evaluate(cdp, "document.getElementById('analysis-params').open = true;true");
+    await sleep(400);
+    await shot(cdp, "ities-params-desktop-pl.png");
+    await evaluate(
+      cdp,
+      "document.getElementById('analysis-params').open = false;" +
+        "document.getElementById('expert-mode').click();true"
+    );
+
+    // The confirmation that a session is about to be thrown away.
+    await evaluate(cdp, "(() => { document.getElementById('btn-session').click(); document.getElementById('session-clear').click(); return true; })()");
+    await waitExpr(cdp, "document.getElementById('confirm-dialog').open", 10000);
+    await sleep(300);
+    await shot(cdp, "ities-clear-dialog-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('confirm-cancel').click();true");
+    await sleep(300);
+
+    // ---------------------------------------------------------------- 1.4.0 surfaces
+    // The explanation the expert switch carries, on focus alone.
+    await evaluate(cdp, "document.getElementById('expert-info').focus();true");
+    await waitExpr(cdp, "!document.getElementById('app-tooltip').hidden", 10000);
+    await sleep(300);
+    await shot(cdp, "ities-tooltip-expert-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('expert-info').blur();true");
+
+    // The algorithm version, explained from the manifest.
+    await evaluate(cdp, "document.getElementById('algo-info').focus();true");
+    await waitExpr(cdp, "!document.getElementById('app-tooltip').hidden", 10000);
+    await sleep(300);
+    await shot(cdp, "ities-tooltip-algo-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('algo-info').blur();true");
+    await sleep(200);
+
+    // The session menu with its name field and the saved sessions.
+    await evaluate(cdp, "document.getElementById('btn-session').click();true");
+    await waitExpr(cdp, "document.getElementById('session-menu').classList.contains('is-open')", 10000);
+    await sleep(400);
+    await shot(cdp, "ities-session-menu-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('btn-session').click();true");
+    await sleep(200);
+
+    // A folder of one's own with its statistics row.
+    await evaluate(cdp, "document.querySelector('.new-folder-button').click();true");
+    await waitExpr(cdp, "!!document.querySelector('.folder-create-input')", 10000);
+    await evaluate(cdp, `(() => {
+      const input = document.querySelector('.folder-create-input');
+      input.value = 'Seria 17.09';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      return true;
+    })()`);
+    await waitExpr(cdp, "!!document.querySelector('.tree-folder')", 10000);
+    await evaluate(cdp, "document.querySelector('.file-item .row-menu-trigger').click();true");
+    await waitExpr(cdp, "document.getElementById('move-menu').open", 10000);
+    await evaluate(cdp, `(() => {
+      const item = [...document.querySelectorAll('#move-menu-list button')]
+        .find((button) => button.textContent === 'Seria 17.09');
+      item.click();
+      return true;
+    })()`);
+    await waitExpr(cdp, "!!document.querySelector('.tree-folder .file-item')", 10000);
+    await sleep(400);
+    await shot(cdp, "ities-user-folder-desktop-pl.png");
+
+    // The footer with the partner logos, in both themes. Whole window, because a
+    // clipped capture of the bar came back empty and a picture has to be checkable.
+    await shot(cdp, "ities-footer-desktop-pl-light.png");
+    await setPrefs(cdp, "pl", "dark");
+    await reload(cdp);
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    await sleep(600);
+    await shot(cdp, "ities-footer-desktop-pl-dark.png");
+    await setPrefs(cdp, "pl", "light");
+    await reload(cdp);
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    await sleep(400);
+
+    // ---------------------------------------------------------------- peaks, pointing mode
+    // A measurement with the standard but no analyte pair: the panel that offers to
+    // point at the missing peaks.
+    await clearThroughUi(cdp);
+    await setInputFiles(cdp, [TPRA_ONLY_FILE]);
+    await waitExpr(cdp, HAS_VERDICT, 180000);
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    // The progress window would sit on top of the panel this shot is about.
+    await evaluate(cdp, "document.getElementById('progress-close').click();true");
+    await sleep(300);
+    await evaluate(cdp, "document.getElementById('expert-mode').click();true");
+    await sleep(500);
+    await shot(cdp, "ities-peaks-desktop-pl.png");
+    await evaluate(cdp, "document.querySelector('.seed-analyte')?.click();true");
+    await sleep(500);
+    await shot(cdp, "ities-pick-desktop-pl.png");
+    await evaluate(cdp, "document.getElementById('expert-mode').click();true");
+    await clearThroughUi(cdp);
 
     // ---------------------------------------------------------------- folder upload
     // Chrome refuses DOM.setFileInputFiles on a webkitdirectory input, so the staged
@@ -334,7 +544,7 @@ async function main() {
       cdp,
       `JSON.stringify({
          files: document.querySelectorAll('.file-row').length,
-         counter: document.getElementById('file-count').textContent,
+         counter: document.querySelector('#sidebar .list-summary-top').textContent,
          folder: document.querySelector('.tree-folder-head') && document.querySelector('.tree-folder-head').textContent,
          rollup: document.querySelector('.folder-counts') && document.querySelector('.folder-counts').textContent,
          subfolderFiles: [...document.querySelectorAll('.file-name')].filter(n => n.textContent.includes('seria_2')).length
@@ -405,7 +615,7 @@ async function main() {
       cdp,
       `JSON.stringify({
          files: document.querySelectorAll('.file-row').length,
-         counter: document.getElementById('file-count').textContent,
+         counter: document.querySelector('#sidebar .list-summary-top').textContent,
          rollup: document.querySelector('.folder-counts') && document.querySelector('.folder-counts').textContent,
          subfolderFiles: [...document.querySelectorAll('.file-name')].filter(n => n.textContent.includes('seria_2')).length
        })`
@@ -420,8 +630,48 @@ async function main() {
       await shot(cdp, `versions-desktop-${lang}.png`);
     }
 
+    // The logo preview, opened from the sidebar header.
+    await evaluate(cdp, "document.querySelector('#sidebar .app-mark')?.click();true");
+    await sleep(700);
+    await shot(cdp, "ities-logo-preview-desktop-pl.png");
+    await evaluate(cdp, "document.querySelector('dialog.logo-lightbox')?.close();true");
+    await sleep(300);
+
+    // ------------------------------------------- the way back from a versions page
+    // Reached the way a person reaches it, from the application, so the page has a
+    // referrer and can offer the button back (addendum AA).
+    await setPrefs(cdp, "pl", "light");
+    await go(cdp, BASE + "/ities/");
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    await evaluate(cdp, `(() => {
+      document.querySelector('.status-right a[href="/ities/versions.html"]').click();
+      return true;
+    })()`);
+    await sleep(1500);
+    await shot(cdp, "ities-versions-back-desktop-pl.png");
+    const itiesBack = await evaluate(
+      cdp,
+      "JSON.stringify({ back: !!document.getElementById('back-to-app'), href: document.getElementById('back-to-app')?.getAttribute('href') })"
+    );
+    report.push("ITIES versions back link: " + itiesBack);
+
+    await go(cdp, BASE + "/peakwise/");
+    await sleep(1500);
+    await shot(cdp, "peakwise-desktop-pl.png");
+    await evaluate(cdp, `(() => {
+      document.querySelector('a[href="/peakwise/versions.html"]').click();
+      return true;
+    })()`);
+    await sleep(1500);
+    await shot(cdp, "peakwise-versions-back-desktop-pl.png");
+    const peakwiseBack = await evaluate(
+      cdp,
+      "JSON.stringify({ back: !!document.getElementById('back-to-app'), href: document.getElementById('back-to-app')?.getAttribute('href') })"
+    );
+    report.push("PeakWise versions back link: " + peakwiseBack);
+
     // ---------------------------------------------------------------- mobile
-    await setViewport(cdp, 390, 844, true);
+    await setViewport(cdp, 390, 844);
     for (const lang of ["en", "pl"]) {
       await setPrefs(cdp, lang, "light");
       await go(cdp, BASE + "/");
@@ -449,16 +699,44 @@ async function main() {
     await evaluate(cdp, "document.getElementById('view-table').click();true");
     await sleep(500);
     await shot(cdp, "ities-table-mobile-en.png");
+    // The toolbar at 390 px: the list and home icons plus the menus, no sideways scroll.
+    await setPrefs(cdp, "pl", "light");
+    await evaluate(cdp, "document.getElementById('view-files').click();true");
+    await reload(cdp);
+    await waitExpr(cdp, HAS_VERDICT, 180000);
+    await sleep(600);
+    await shot(cdp, "ities-toolbar-mobile-pl.png");
+    const mobileOverflow = await evaluate(
+      cdp,
+      "JSON.stringify({ scrollWidth: document.documentElement.scrollWidth, inner: window.innerWidth })"
+    );
+    report.push("mobile horizontal overflow check: " + mobileOverflow);
 
     report.push("console errors: " + (cdp.errors.length ? cdp.errors.join(" | ") : "none"));
     cdp.close();
   } finally {
-    kill();
+    try {
+      chrome.kill("SIGTERM");
+    } catch (_) {
+      /* already gone */
+    }
+    await server.stopAndWait();
     await sleep(300);
     // The 45 staged copies are lab data; they exist only for the run.
     fs.rmSync(FOLDER_STAGE, { recursive: true, force: true });
   }
+  // Only the test port is inspected, and only with lsof: the owner's 20412 is never
+  // touched by these runs.
+  let orphans = "";
+  try {
+    orphans = execFileSync("lsof", ["-nP", `-iTCP:${TEST_PORT}`], { encoding: "utf8" }).trim();
+  } catch (_) {
+    orphans = "";
+  }
+  report.push("screenshots written: " + screenshotCount);
+  report.push("gunicorn left running: " + (orphans || "none"));
   console.log("\n" + report.join("\n"));
+  if (orphans) process.exit(1);
 }
 
 main().catch((err) => {

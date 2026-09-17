@@ -38,7 +38,9 @@ function anchorFor(pct) {
 
 // The tolerance ruler: where this measurement sits against the two thresholds the
 // loaded algorithm version declares. Values come from the module, never from the UI.
-export function deviationScale(result, constants, tone) {
+// With session parameters in force the bands are hatched, so a ruler drawn against
+// custom thresholds can never be mistaken for the validated one.
+export function deviationScale(result, constants, tone, custom) {
   const det = (constants?.DETECTION_TOLERANCE_V ?? 0.01) * 1000;
   const unc = (constants?.UNCERTAIN_TOLERANCE_V ?? 0.015) * 1000;
   const dev = signedDeviationMv(result, constants);
@@ -51,7 +53,7 @@ export function deviationScale(result, constants, tone) {
   for (let mv = SCALE_MIN_MV; mv <= SCALE_MAX_MV; mv += TICK_STEP_MV) ticks.push(mv);
 
   const wrap = document.createElement("div");
-  wrap.className = "delta-scale" + (tone ? " tone-" + tone : "");
+  wrap.className = "delta-scale" + (tone ? " tone-" + tone : "") + (custom ? " is-custom" : "");
   wrap.setAttribute("role", "img");
   wrap.setAttribute(
     "aria-label",
@@ -94,17 +96,4 @@ export function deviationScale(result, constants, tone) {
       <li><span class="delta-sw out"></span>${t("scale.out")}</li>
     </ul>`;
   return wrap;
-}
-
-// The badge next to the file name: a dot, the word, never colour on its own.
-export function verdictBadge(status) {
-  const info = verdictInfo(status);
-  const badge = document.createElement("span");
-  badge.className = "verdict-badge tone-" + info.tone;
-  const dot = document.createElement("span");
-  dot.className = "verdict-badge-dot";
-  const word = document.createElement("span");
-  word.textContent = info.word;
-  badge.append(dot, word);
-  return badge;
 }

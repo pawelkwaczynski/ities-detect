@@ -8,12 +8,14 @@
 // PeakWise integration changed: the four hub pictures, which still showed a "soon" badge,
 // and the PeakWise screens, which had never been shot from this server.
 //
-// The server has to be running:  server/start.sh   (http://127.0.0.1:20412)
+// The server has to be running. Set ITIES_TEST_PORT to point this run at a test
+// server instead of the owner's one on 20412.
 import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { loginInBrowser, startTestServer } from "./test_server_boot.mjs";
 
 const require = createRequire(import.meta.url);
 const WebSocket = require("ws");
@@ -22,9 +24,15 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const OUT = path.join(ROOT, "screenshots");
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const PORT = 9224;
-const BASE = "http://127.0.0.1:20412";
-const HURNY = path.resolve(ROOT, "../../../HURNY");
+const PORT = Number(process.env.PW_SHOT_CDP_PORT || 9224);
+// The owner clicks on 20412 and a second agent works on 20413, so this run takes its
+// port from ITIES_TEST_PORT and falls back to the owner's server only when nothing is
+// set. The caller starts the server; this script only reads from it.
+// With ITIES_TEST_PORT set the run starts and stops its own gunicorn on that port and
+// signs in with its throwaway account, so it never needs the owner's server.
+const OWN_SERVER = !!process.env.ITIES_TEST_PORT;
+const BASE = `http://127.0.0.1:${process.env.ITIES_TEST_PORT || 20412}`;
+const HURNY = "/Users/pawelkwaczynski/Desktop/claude_brain/projekty/HURNY";
 // Its own staging directory: screenshots/.files belongs to tools/screenshots.mjs.
 const STAGE = path.join(OUT, ".peakwise-files");
 
@@ -154,6 +162,7 @@ async function uploadAndAnalyse(cdp) {
 }
 
 async function main() {
+  const server = OWN_SERVER ? await startTestServer({ port: Number(process.env.ITIES_TEST_PORT) }) : null;
   const chrome = spawn(
     CHROME,
     [
@@ -210,6 +219,11 @@ async function main() {
       await cdp.send("Page.reload", { ignoreCache: false });
       await sleep(900);
     };
+
+    if (server) {
+      await go(BASE + "/login");
+      await loginInBrowser(cdp, { evaluate, goto: (c, url) => go(url) }, server, BASE);
+    }
 
     // ------------------------------------------------------------------ hub, desktop
     await setViewport(cdp, 1440, 900, false);
@@ -295,6 +309,7 @@ async function main() {
   } finally {
     kill();
     await sleep(300);
+    if (server) await server.stopAndWait();
     // The staged copies are lab data; they exist only for the run.
     fs.rmSync(STAGE, { recursive: true, force: true });
   }

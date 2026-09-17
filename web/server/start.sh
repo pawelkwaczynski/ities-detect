@@ -5,6 +5,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LOG="${ITIES_LOG:-$HOME/analizatory/app.log}"
 BIND="${ITIES_BIND:-0.0.0.0:20412}"
 VENV="$ROOT/.venv"
+AUTH_FILE="${ITIES_AUTH_FILE:-$ROOT/server/auth.local.json}"
+
+if [[ ! -f "$AUTH_FILE" ]]; then
+  echo "missing authentication configuration: $AUTH_FILE" >&2
+  exit 1
+fi
+export ITIES_AUTH_FILE="$AUTH_FILE"
 
 mkdir -p "$(dirname "$LOG")"
 

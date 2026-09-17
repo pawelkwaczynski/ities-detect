@@ -82,9 +82,60 @@ def attach_curve(result, content):
         result["curve"] = None
     return result
 
+def attach_point_prominence(result, content):
+    """Prominence of the peak a manual point 1 to 4 stands on.
+
+    The detector reports prominence for the peaks it finds itself. A point the
+    technician indicated goes through nearest_on_branch, which carries none, so a
+    place that is no peak at all looks exactly like one. Measured here on the same
+    smoothed branch signal the detector uses: find every peak on that branch with no
+    threshold, then take the strongest one within 20 mV of the indicated potential.
+    Nothing inside the algorithm is touched and no verdict field is written, the
+    value lands in its own key.
+    """
+    try:
+        from scipy.signal import find_peaks
+        points = result.get("points") or {}
+        need = [
+            k for k in ("1", "2", "3", "4")
+            if isinstance(points.get(k), dict)
+            and points[k].get("prom") is None
+            and points[k].get("idx") is not None
+        ]
+        if not need:
+            return result
+        E, I, _, _ = parse_file(content)
+        E_use, I_use, _, _ = detect_cycles_and_select(E, I)
+        upper, lower = split_cv(E_use)
+        out = {}
+        for key in need:
+            gi = int(points[key]["idx"])
+            idx = lower if key in ("1", "3") else upper
+            raw = I_use[idx] if key in ("2", "4") else -I_use[idx]
+            y = smooth_signal(raw)
+            Eb = E_use[idx]
+            if len(y) < 5:
+                continue
+            local = int(np.argmin(np.abs(np.asarray(idx) - gi)))
+            peaks, props = find_peaks(y, prominence=0)
+            step = max(float(np.median(np.abs(np.diff(Eb)))), 1e-9)
+            window = max(3, int(round(0.020 / step)))
+            best = 0.0
+            for j, position in enumerate(peaks):
+                if abs(int(position) - local) <= window:
+                    best = max(best, float(props["prominences"][j]))
+            out[key] = best
+        if out:
+            result["manual_prominence"] = out
+    except Exception:
+        pass
+    return result
+
 def dump_analyze(name, content, manual=None):
     result = analyze(name, content, manual=manual)
     result = attach_curve(result, content)
+    if manual:
+        result = attach_point_prominence(result, content)
     try:
         result["result_row"] = to_jsonable(result_row(result))
     except Exception as exc:
@@ -115,6 +166,41 @@ def algo_constants():
     if kal_name in kals:
         out["KALIBRACJA"] = to_jsonable(kals[kal_name])
     return json.dumps(out, ensure_ascii=False, default=str)
+
+_ANALYSIS_PARAM_NAMES = (
+    "DETECTION_TOLERANCE_V",
+    "UNCERTAIN_TOLERANCE_V",
+    "AMPHETAMINE_TARGET_DELTA_V",
+    "WIN_TPRA_POS_RAW",
+    "WIN_TPRA_NEG_RAW",
+)
+_ORIGINAL_ANALYSIS_PARAMS = None
+
+def remember_analysis_params():
+    global _ORIGINAL_ANALYSIS_PARAMS
+    g = globals()
+    _ORIGINAL_ANALYSIS_PARAMS = {name: g[name] for name in _ANALYSIS_PARAM_NAMES}
+    return algo_constants()
+
+def apply_analysis_params(payload=None):
+    if _ORIGINAL_ANALYSIS_PARAMS is None:
+        remember_analysis_params()
+    g = globals()
+    for name, value in _ORIGINAL_ANALYSIS_PARAMS.items():
+        g[name] = value
+    overrides = json.loads(payload) if payload else None
+    if overrides:
+        unknown = set(overrides) - set(_ANALYSIS_PARAM_NAMES)
+        if unknown:
+            raise ValueError("Unknown analysis parameter: " + ", ".join(sorted(unknown)))
+        for name, value in overrides.items():
+            if name in ("WIN_TPRA_POS_RAW", "WIN_TPRA_NEG_RAW"):
+                if not isinstance(value, list) or len(value) != 2:
+                    raise ValueError(name + " must contain two values")
+                g[name] = (float(value[0]), float(value[1]))
+            else:
+                g[name] = float(value)
+    return algo_constants()
 `;
 
 export const CONSTANT_NAMES = [
@@ -125,4 +211,6 @@ export const CONSTANT_NAMES = [
   "PEAK_PROMINENCE_A",
   "KALIBRACJA_AKTYWNA",
   "WEAK_PEAK_CANDIDATES",
+  "WIN_TPRA_POS_RAW",
+  "WIN_TPRA_NEG_RAW",
 ];

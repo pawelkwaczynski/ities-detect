@@ -1,6 +1,7 @@
 import { locale, t } from "/shared/i18n.js";
 import {
   aggregationRule,
+  belowThresholdSentence,
   displayResult,
   fmtNum,
   isUnsuitable,
@@ -18,10 +19,11 @@ const COLS = [
   { key: "ip", labelKey: "table.ip" },
   { key: "version", labelKey: "table.version" },
   { key: "mode", labelKey: "table.mode" },
+  { key: "params", labelKey: "table.params" },
   { key: "warn", labelKey: "table.warn" },
 ];
 
-function rowModel(file) {
+function rowModel(file, constants) {
   const r = displayResult(file);
   const info = r ? verdictInfo(r.status) : null;
   const quality = !r
@@ -41,7 +43,9 @@ function rowModel(file) {
     ip: r?.Ip_analyte_fwd_uA,
     version: file.algoVersion || "",
     mode: r?.mode === "manual" ? t("mode.manual") : r ? t("mode.auto") : "",
+    params: file.paramsOverride ? t("params.custom") : t("params.default"),
     warnings: r?.warnings || [],
+    belowThreshold: r ? belowThresholdSentence(r, constants) : "",
     status: r?.status,
   };
 }
@@ -56,14 +60,14 @@ function cmp(a, b, key) {
   return String(va).localeCompare(String(vb), locale());
 }
 
-export function renderTable(host, { files, filter, sortKey, sortDir, onSelect, onSort }) {
+export function renderTable(host, { files, filter, sortKey, sortDir, constants, onSelect, onSort }) {
   host.innerHTML = "";
   const rule = document.createElement("p");
   rule.className = "agg-rule muted";
   rule.textContent = aggregationRule();
   host.appendChild(rule);
 
-  const rows = files.filter((f) => matchesFilter(f, filter)).map(rowModel);
+  const rows = files.filter((f) => matchesFilter(f, filter)).map((file) => rowModel(file, constants));
   rows.sort((a, b) => cmp(a, b, sortKey) * sortDir);
 
   const table = document.createElement("table");
@@ -100,6 +104,7 @@ export function renderTable(host, { files, filter, sortKey, sortDir, onSelect, o
       fmtNum(row.ip, 3),
       row.version,
       row.mode,
+      row.params,
       null,
     ];
     cells.forEach((val, idx) => {
@@ -111,7 +116,7 @@ export function renderTable(host, { files, filter, sortKey, sortDir, onSelect, o
           chip.textContent = row.verdict;
           td.appendChild(chip);
         }
-      } else if (idx === 9) {
+      } else if (idx === 10) {
         if (row.warnings.length) {
           const tip = row.warnings.map((w) => w.message).join(" ");
           const btn = document.createElement("button");
@@ -121,6 +126,16 @@ export function renderTable(host, { files, filter, sortKey, sortDir, onSelect, o
           btn.setAttribute("aria-label", tip);
           btn.textContent = String(row.warnings.length);
           td.appendChild(btn);
+        }
+      } else if (idx === 8) {
+        // The mode cell carries the one sentence about a manual point the detector
+        // would not have read as a peak.
+        td.textContent = val;
+        if (row.belowThreshold) {
+          const note = document.createElement("span");
+          note.className = "table-below-threshold";
+          note.textContent = row.belowThreshold;
+          td.appendChild(note);
         }
       } else {
         td.textContent = val;

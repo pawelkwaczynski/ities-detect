@@ -3,6 +3,9 @@
 // baseline rules, warning codes) is translated here, never rewritten in the module.
 
 const EN = {
+  "common.logout": "Log out",
+  "common.year": "2026",
+  "common.backTo": "Back to {app}",
   "app.name": "PeakWise",
   "app.tagline": "Anodic and cathodic peaks of 3D printed electrodes.",
   "app.version": "app {v}",
@@ -197,9 +200,66 @@ const EN = {
   "common.yes": "yes",
   "common.no": "no",
   "common.none": "none",
+
+  // --- shell of version 1.1, built to the ITIES Detect 1.4 frame ---
+  "common.close": "Close",
+  "toolbar.recompute": "Recompute all",
+  "toolbar.view": "View",
+  "toolbar.import": "Add files",
+  "sidebar.label": "Electrode list",
+  "sidebar.filters": "Status filters",
+  "sidebar.filtersSection": "Filters",
+  "sidebar.filesSection": "Files",
+  "sidebar.dropTitle": "Drop files here",
+  "sidebar.dropHint": "A whole folder is read as one electrode.",
+  "sidebar.dropFormats": "TXT exported from NOVA, semicolon or tab",
+  "summary.files": "files",
+  "bucket.pair": "peak pair",
+  "bucket.partial": "one branch",
+  "bucket.none": "no peak",
+  "bucket.unreadable": "unreadable",
+  "session.menu": "Session",
+  "session.currentLabel": "Current session",
+  "session.nameLabel": "Session name",
+  "session.new": "New session",
+  "session.saveFile": "Save session to a file",
+  "session.loadFile": "Load session from a file",
+  "session.clear": "Clear session",
+  "session.keep": "Keep",
+  "session.clearTitle": "Clear the session?",
+  "session.clearBody": "{n} files and their results leave this browser. The files on disk are not touched.",
+  "session.clearConfirm": "Clear",
+  "session.saved": "Saved {time}",
+  "session.loadFailed": "That file is not a PeakWise session.",
+  "status.analysed": "{done} of {total} analysed",
+  "progress.title": "Series analysis",
+  "progress.approximate": "approximate",
+  "progress.abort": "Stop",
+  "progress.of": "{done} of {total}",
+  "export.backgroundHint": "Turn on background graphics in the print dialog, otherwise the charts will be pale.",
+  "algo.info.label": "About this algorithm version",
+  "algo.info.text": "Algorithm {v}, SHA-256 {sha}. Every result on screen was computed by this version.",
+  "tip.home": "Back to the CV Analysers hub. The files stay in this browser.",
+  "tip.homeLabel": "CV Analysers",
+  "tip.session": "Name, save, load or clear the current set of files.",
+  "tip.recompute": "Run the current algorithm version over every file again.",
+  "tip.export": "Session CSV with the notebook columns, or a report for printing.",
+  "tip.operator": "The name that goes into the CSV and the printed report.",
+  "tip.versionsLink": "Algorithm and application versions, with their measured error.",
+  "tip.logoZoom": "Show the PeakWise mark large.",
+  "tip.sidebarDrop": "Drop TXT files or a folder here. A folder is read as one electrode.",
+  "tip.import": "Pick TXT files from disk.",
+  "tip.addFolder": "Pick a folder, read as one electrode.",
+  "tip.appSwitch": "Switch between the analysers. Each keeps its own files.",
+  "partner.ul": "University of Lodz",
+  "partner.ahe": "Academy of Humanities and Economics in Lodz",
+
 };
 
 const PL = {
+  "common.logout": "Wyloguj",
+  "common.year": "2026",
+  "common.backTo": "Wróć do {app}",
   "app.name": "PeakWise",
   "app.tagline": "Piki anodowe i katodowe elektrod drukowanych 3D.",
   "app.version": "aplikacja {v}",
@@ -394,6 +454,60 @@ const PL = {
   "common.yes": "tak",
   "common.no": "nie",
   "common.none": "brak",
+
+  // --- powłoka wersji 1.1, ta sama rama co ITIES Detect 1.4 ---
+  "common.close": "Zamknij",
+  "toolbar.recompute": "Przelicz ponownie",
+  "toolbar.view": "Widok",
+  "toolbar.import": "Dodaj pliki",
+  "sidebar.label": "Lista elektrod",
+  "sidebar.filters": "Filtry statusu",
+  "sidebar.filtersSection": "Filtry",
+  "sidebar.filesSection": "Pliki",
+  "sidebar.dropTitle": "Upuść pliki tutaj",
+  "sidebar.dropHint": "Cały folder czytamy jako jedną elektrodę.",
+  "sidebar.dropFormats": "TXT z programu NOVA, średnik albo tabulator",
+  "summary.files": "plików",
+  "bucket.pair": "para pików",
+  "bucket.partial": "jedna gałąź",
+  "bucket.none": "brak piku",
+  "bucket.unreadable": "nie do odczytu",
+  "session.menu": "Sesja",
+  "session.currentLabel": "Bieżąca sesja",
+  "session.nameLabel": "Nazwa sesji",
+  "session.new": "Nowa sesja",
+  "session.saveFile": "Zapisz sesję do pliku",
+  "session.loadFile": "Wczytaj sesję z pliku",
+  "session.clear": "Wyczyść sesję",
+  "session.keep": "Zostaw",
+  "session.clearTitle": "Wyczyścić sesję?",
+  "session.clearBody": "{n} plików i ich wyniki znikną z tej przeglądarki. Plików na dysku to nie dotyka.",
+  "session.clearConfirm": "Wyczyść",
+  "session.saved": "Zapisano {time}",
+  "session.loadFailed": "To nie jest plik sesji PeakWise.",
+  "status.analysed": "przeanalizowano {done} z {total}",
+  "progress.title": "Analiza serii",
+  "progress.approximate": "orientacyjnie",
+  "progress.abort": "Przerwij",
+  "progress.of": "{done} z {total}",
+  "export.backgroundHint": "W oknie drukowania włącz grafikę tła, inaczej wykresy wyjdą blade.",
+  "algo.info.label": "O tej wersji algorytmu",
+  "algo.info.text": "Algorytm {v}, SHA-256 {sha}. Każdy wynik na ekranie policzyła ta wersja.",
+  "tip.home": "Powrót do huba Analizatory CV. Pliki zostają w tej przeglądarce.",
+  "tip.homeLabel": "Analizatory CV",
+  "tip.session": "Nazwij, zapisz, wczytaj albo wyczyść bieżący zestaw plików.",
+  "tip.recompute": "Policz wszystkie pliki jeszcze raz bieżącą wersją algorytmu.",
+  "tip.export": "CSV sesji w kolumnach notebooka albo raport do druku.",
+  "tip.operator": "Nazwisko, które trafia do CSV i do raportu.",
+  "tip.versionsLink": "Wersje algorytmu i aplikacji razem ze zmierzonym błędem.",
+  "tip.logoZoom": "Pokaż znak PeakWise w dużym rozmiarze.",
+  "tip.sidebarDrop": "Upuść tutaj pliki TXT albo folder. Folder czytamy jako jedną elektrodę.",
+  "tip.import": "Wybierz pliki TXT z dysku.",
+  "tip.addFolder": "Wybierz folder, czytany jako jedną elektrodę.",
+  "tip.appSwitch": "Przełącz się między analizatorami. Każdy trzyma swoje pliki.",
+  "partner.ul": "Uniwersytet Łódzki",
+  "partner.ahe": "Akademia Humanistyczno-Ekonomiczna w Łodzi",
+
 };
 
 const DICTS = { en: EN, pl: PL };
@@ -408,13 +522,26 @@ const STORAGE_KEY = "analizatory-lang";
 
 let current = "en";
 
+// The local choice comes first, the cookie is the server hint for the login page.
 export function initLang() {
+  let chosen = null;
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && DICTS[saved]) current = saved;
+    if (saved && DICTS[saved]) chosen = saved;
   } catch (_) {
     /* private mode, keep the default */
   }
+  if (!chosen) {
+    const cookie = document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(STORAGE_KEY + "="));
+    if (cookie) {
+      const saved = decodeURIComponent(cookie.slice(STORAGE_KEY.length + 1));
+      if (DICTS[saved]) chosen = saved;
+    }
+  }
+  if (chosen) current = chosen;
   document.documentElement.lang = current;
   return current;
 }
@@ -432,6 +559,7 @@ export function setLang(code) {
   } catch (_) {
     /* nothing to do, the choice just will not survive a reload */
   }
+  document.cookie = `${STORAGE_KEY}=${encodeURIComponent(code)}; Path=/; Max-Age=31536000; SameSite=Lax`;
   return current;
 }
 

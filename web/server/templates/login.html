@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title data-i18n="login.pageTitle">{{ copy["login.pageTitle"] }}</title>
+  <link rel="stylesheet" href="/shared/tokens.css">
+  <link rel="stylesheet" href="/shared/ui.css">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <img class="login-icon" src="/assets/cv_icon_256.png"
+         srcset="/assets/cv_icon_256.png 256w, /assets/cv_icon_512.png 512w"
+         sizes="88px" width="88" height="88" alt="Analizatory CV">
+    <h1 data-i18n="login.title">{{ copy["login.title"] }}</h1>
+    <form method="post" action="/login?lang={{ lang }}" novalidate>
+      <input type="hidden" name="next" value="{{ next_path }}">
+      <label>
+        <span data-i18n="login.username">{{ copy["login.username"] }}</span>
+        <input name="username" type="text" autocomplete="username" required autofocus>
+      </label>
+      <label>
+        <span data-i18n="login.password">{{ copy["login.password"] }}</span>
+        <input name="password" type="password" autocomplete="current-password" required>
+      </label>
+      <button class="primary" type="submit" data-i18n="login.submit">{{ copy["login.submit"] }}</button>
+      {% if error_key %}
+      <p class="login-error" role="alert" data-i18n="{{ error_key }}">{{ copy[error_key] }}</p>
+      {% else %}
+      <p class="login-error" aria-live="polite"></p>
+      {% endif %}
+    </form>
+    <p class="login-brand"><span data-i18n="login.by">{{ copy["login.by"] }}</span><img src="/assets/partners/focusframe-logo.svg" alt="Focus Frame" height="16"></p>
+  </main>
+</body>
+</html>

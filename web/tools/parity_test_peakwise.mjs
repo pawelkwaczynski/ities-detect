@@ -19,7 +19,7 @@ import { stubMatplotlib, ANALYZE_HELPERS_PY } from "../static/peakwise/algo_stub
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
-const HURNY = path.resolve(ROOT, "../../../HURNY");
+const HURNY = "/Users/pawelkwaczynski/Desktop/claude_brain/projekty/HURNY";
 const DATA_DIRS = ["SPE iterations", "Python"];
 const SKIP_EXT = new Set([".png", ".jpg", ".jpeg", ".xlsx", ".opju", ".md"]);
 const PW_MEASUREMENTS = path.resolve(ROOT, "../10_peakwise_web_20260916/wyniki");

@@ -1,7 +1,8 @@
 # ITIES Detect Web + hub „Analizatory CV" — specyfikacja budowy (16.09.2026)
 
-Właściciel: Paweł Kwaczyński. Odbiór: parity test + przegląd wizualny.
-Kontekst produktu: `PRODUCT.md` (ten katalog).
+Właściciel: Paweł Kwaczyński. Budowa: Codex (zamknięty pakiet). Odbiór: Claude (parity test + przegląd wizualny), Paweł.
+Kontekst produktu: `PRODUCT.md` (ten katalog). Reguły rzemiosła UI do przeczytania przed kodowaniem:
+`~/.claude/skills/impeccable/reference/craft-floor.md` i `~/.claude/skills/impeccable/reference/operate.md`.
 
 ## 0. Decyzje nieodwołalne
 1. **Liczy przeglądarka, nie serwer.** Pyodide (Python w WebAssembly) w Web Workerze ładuje plik `algo/ities_algo_v1.1.py`
@@ -111,23 +112,24 @@ Nigdy czerwieni alarmowej dla werdyktu; czerwień tylko dla punktów analitu na 
 - `app.py`: Flask; `/` → `static/index.html`; `/ities/` → `static/ities/index.html`; `/algo/<plik>` (z `Cache-Control: no-cache`); `/api/versions` (czyta `algo/versions.json`);
   statyki z obsługą `.br`/`.gz` (jeśli istnieje `plik.br` i klient akceptuje br, wysyłaj z `Content-Encoding: br`), MIME `application/wasm` dla `.wasm`, cache długi dla `/pyodide/` i `/vendor/`.
 - `requirements.txt`: flask, gunicorn (tylko to). `start.sh`: watchdog jak w StudentSpot (pgrep gunicorn → start na 0.0.0.0:20412, log do `~/analizatory/app.log`).
-- `deploy_frog.md`: kroki: (1) na Macu `tools/fetch_pyodide.sh` (pobiera z npm/jsdelivr do `static/pyodide/`, bez matplotlib, tylko potrzebne koła; potem `brotli`/`gzip -k` dla `.wasm`, `.whl`, `.js`, `.zip`); (2) rsync do `frog@frog01.mikr.us:~/analizatory/`; (3) `python3 -m venv .venv && .venv/bin/pip install -r server/requirements.txt`; (4) crontab: `@reboot` i `*/5 * * * *` → `start.sh`; (5) test `curl -s localhost:20412/api/versions`.
+- `deploy_frog.md`: kroki: (1) na Macu `tools/fetch_pyodide.sh` (pobiera z npm/jsdelivr do `static/pyodide/`, bez matplotlib, tylko potrzebne koła; potem `brotli`/`gzip -k` dla `.wasm`, `.whl`, `.js`, `.zip`); (2) rsync do `frog@frog01.mikr.us:~/analizatory/`; (3) `python3 -m venv .venv && .venv/bin/pip install -r server/requirements.txt`; (4) crontab: `@reboot` i `*/5 * * * *` → `start.sh`; (5) test `curl -s localhost:20412/api/versions`. Wdrożenie wykonuje Claude, nie Codex.
 - Pamięć: gunicorn 1 worker 2 wątki, `--max-requests 200`; cel RSS < 60 MB. Zmierzyć lokalnie i wpisać do README.
 
 ## 7. Historia wersji (`versions.html`)
 - Tabela z `versions.json`: wersja, data, SHA-256 (skrócony, pełny w tytule), zmiany (lista), zmierzone (czułość, fałszywe wykrycia z datą pomiaru), przycisk „Użyj tej wersji w sesji" (przeładowuje worker inną wersją; wyniki sesji policzone inną wersją dostają nową rewizję, stara zostaje w tabeli z oznaczeniem wersji).
 - Sekcja „Wersje aplikacji" ręczna: `APP_VERSION` w `app.js` + lista zmian w `versions.html`.
 
-## 8. Testy i odbiór
+## 8. Testy i odbiór (Codex uruchamia i wkleja wyniki)
 1. `tools/parity_test.mjs` (Node + pyodide z npm, `nice -n 10`): 485 plików, 0 różnic; czas; zapis do `RELEASE_CHECK.md`.
 2. Test negatywny parytetu: podmień w pamięci `AMPHETAMINE_TARGET_DELTA_V` na 0.356 i pokaż, że parity test zgłasza różnice (test umie zawieść).
 3. Serwer: `python -m pytest`-owy mini test albo skrypt: `/api/versions` zwraca JSON z domyślną wersją; `.wasm` ma poprawny MIME; `.br` serwowane z `Content-Encoding`.
-4. Ręcznie: otwórz `static/ities/index.html` przez lokalny serwer, wrzuć 3 pliki referencyjne z `PRODUCT.md` (Evidence), sprawdź werdykty: 93P_300ul_TPra(1) → DO OCENY EKSPERTA z ΔE_s 0,3638; `BRB pH 7 CV 50uM codeine + 50uM TPrA.txt` → NIE STWIERDZONO (ΔE_s 0,3094); `132-1_blank(2).txt` → POMIAR NIE NADAJE SIĘ DO OCENY (brak wzorca).
+4. Ręcznie (Codex opisuje, co zrobił): otwórz `static/ities/index.html` przez lokalny serwer, wrzuć 3 pliki referencyjne z `PRODUCT.md` (Evidence), sprawdź werdykty: 93P_300ul_TPra(1) → DO OCENY EKSPERTA z ΔE_s 0,3638; `BRB pH 7 CV 50uM codeine + 50uM TPrA.txt` → NIE STWIERDZONO (ΔE_s 0,3094); `132-1_blank(2).txt` → POMIAR NIE NADAJE SIĘ DO OCENY (brak wzorca).
 5. Zrzuty ekranu desktop (1440×900) i mobile (390×844) dla huba, wyniku pliku, tabeli, trybu eksperckiego, historii wersji → `screenshots/`.
    Jeśli brak przeglądarki headless, opisać to wprost zamiast udawać.
+6. `node ~/.claude/skills/impeccable/scripts/detect.mjs --json static/` uruchomić raz na koniec, mechaniczne znaleziska poprawić, resztę wypisać.
 
 ## 9. Czego NIE robić
 - Nie zmieniać niczego w `algo/*.py` ani w notebooku. Nie dodawać logowania, kont, bazy, analityki, cookies, zewnętrznych fontów, Google/CDN w runtime (poza fallbackiem Pyodide).
 - Nie wymyślać liczb, certyfikatów, klientów, opinii. Nie pisać „policja" w UI (tylko w PRODUCT.md), UI jest dla laboratorium.
 - Nie udawać okna macOS (żadnych sztucznych „świateł" ruchu, pasków tytułu z kółkami). Nie używać czerwieni alarmowej dla werdyktu.
-- Nie commitować, nie publikować, nie wdrażać na serwer bez przeglądu właściciela.
+- Nie commitować, nie publikować, nie wdrażać na serwer (wdraża Claude). Nie używać Chrome przez MCP.
