@@ -1,5 +1,7 @@
 # ITIES Detect
 
+<p align="center"><a href="README.pl.md">🇵🇱 <b>Przeczytaj po polsku</b></a></p>
+
 Colab notebook for detecting amphetamine in cyclic voltammograms recorded at a liquid-liquid interface (ITIES), with an internal TPrA+ reference. It locates the reference and analyte peaks, checks the peak separation against the expected value, reads the peak current with a baseline fitted before the signal (tangent intersection for weak peaks), and converts current to concentration with a calibration curve. Algorithm revision history: `WERSJE_ALGORYTMU.md`.
 
 Companion scripts: calibration fit (`kalibracja_cc.py`), quantitation and purity (`ilosciowka.py`), replicate analysis, false-negative plotting, label evaluation against a lab-labelled folder (`eval_etykiety.py`, `eval_katalog.py`), a detection-threshold grid search (`grid_etykiety.py`), a visual-control PDF for spot-checking borderline files (`kontrola_wizualna_20260916.py`), a headless end-to-end test (`test_ities_local.py`) and an end-to-end purity check (`test_end2end_czystosc.py`). More diagnostics under `tools/`.
