@@ -285,7 +285,14 @@ def login():
     # every session that was opened with the old one.
     session["pv"] = stored_hash[-12:]
     session.permanent = True
-    return redirect(_safe_next(request.form.get("next")))
+    response = redirect(_safe_next(request.form.get("next")))
+    # An account can carry a language for its first visit, for example the journal
+    # reviewer, who should land in the English interface without hunting for the switch.
+    # A choice this browser already made (the language cookie) always wins.
+    first_lang = (AUTH_CONFIG.get("user_lang") or {}).get(username)
+    if first_lang in LOGIN_COPY and "analizatory-lang" not in request.cookies:
+        response.set_cookie("analizatory-lang", first_lang, max_age=31536000, samesite="Lax", path="/")
+    return response
 
 
 MIN_PASSWORD_LENGTH = 10

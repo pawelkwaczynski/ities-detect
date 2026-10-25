@@ -15,12 +15,17 @@ from werkzeug.security import generate_password_hash
 ROOT = Path(__file__).resolve().parent.parent
 TEST_USER = "generated-test-user"
 TEST_PASSWORD = secrets.token_urlsafe(24)
+TEST_REVIEWER = "generated-test-reviewer"
 AUTH_DIR = tempfile.TemporaryDirectory(prefix=".auth-test-", dir=ROOT / "tools")
 AUTH_FILE = Path(AUTH_DIR.name) / "auth.local.json"
 AUTH_FILE.write_text(
     json.dumps(
         {
-            "users": {TEST_USER: generate_password_hash(TEST_PASSWORD)},
+            "users": {
+                TEST_USER: generate_password_hash(TEST_PASSWORD),
+                TEST_REVIEWER: generate_password_hash(TEST_PASSWORD),
+            },
+            "user_lang": {TEST_REVIEWER: "en"},
             "secret_key": secrets.token_hex(32),
         }
     ),
@@ -116,6 +121,42 @@ def main() -> int:
         fails.append("HTTPS proxy login did not mark the session cookie Secure")
     else:
         print("proxy HTTPS session cookie: Secure")
+
+    # An account with a first-visit language gets the language cookie; a browser that
+    # already chose a language keeps it; an ordinary account gets no language cookie.
+    def lang_cookie(response):
+        return next((v for v in response.headers.getlist("Set-Cookie") if v.startswith("analizatory-lang=")), None)
+
+    reviewer = app.test_client().post(
+        "/login",
+        data={"username": TEST_REVIEWER, "password": TEST_PASSWORD, "next": "/ities/"},
+        environ_base={"REMOTE_ADDR": "127.0.0.30"},
+    )
+    rc = lang_cookie(reviewer)
+    if reviewer.status_code != 302 or not rc or not rc.startswith("analizatory-lang=en;"):
+        fails.append(f"reviewer login did not set the English language cookie: {reviewer.status_code} {rc!r}")
+    else:
+        print("reviewer login: language cookie en")
+    chosen = app.test_client()
+    chosen.set_cookie("analizatory-lang", "pl")
+    kept = chosen.post(
+        "/login",
+        data={"username": TEST_REVIEWER, "password": TEST_PASSWORD, "next": "/"},
+        environ_base={"REMOTE_ADDR": "127.0.0.31"},
+    )
+    if kept.status_code != 302 or lang_cookie(kept):
+        fails.append("reviewer login overrode a language the browser had already chosen")
+    else:
+        print("reviewer login: the browser's own language choice is kept")
+    plain = app.test_client().post(
+        "/login",
+        data={"username": TEST_USER, "password": TEST_PASSWORD, "next": "/"},
+        environ_base={"REMOTE_ADDR": "127.0.0.32"},
+    )
+    if plain.status_code != 302 or lang_cookie(plain):
+        fails.append("an account without a first-visit language got a language cookie")
+    else:
+        print("ordinary login: no language cookie")
 
     limited = app.test_client()
     rate_statuses = []
@@ -271,7 +312,7 @@ def main() -> int:
         for failure in fails:
             print(" -", failure)
         return 1
-    print("PASS server: 23 checks, authentication, no indexing and protected assets")
+    print("PASS server: 26 checks, authentication, no indexing and protected assets")
     return 0
 
 

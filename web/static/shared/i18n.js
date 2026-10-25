@@ -645,6 +645,8 @@ const EN = {
 
   "print.session": "Session: {name}",
 
+  "app.changelog.1_4_4":
+    "2026-10-25: an account can open in a set language on its first visit; the journal reviewer account opens in English. A language the browser has already chosen is kept.",
   "app.changelog.1_4_3":
     "2026-10-25: a Guide button in the footer outlines the six parts of the screen with dashed frames and names them (cumulative results, file inventory, display options, data display, tolerance scale, numerical data), as in the manuscript figure. It opens once by itself at the first result shown in a browser; clicks pass through to the application and Escape closes it. Measurement parameters and analysis history come back in expert mode. In the dark theme the chart redraws in dark colours after a theme switch, curves and points are lighter, and the partner logos are light grey instead of sitting on a white strip.",
   "app.changelog.1_4_2":
@@ -1290,6 +1292,8 @@ const PL = {
 
   "print.session": "Sesja: {name}",
 
+  "app.changelog.1_4_4":
+    "2026-10-25: konto może przy pierwszej wizycie otworzyć się w ustawionym języku; konto recenzenta czasopisma otwiera się po angielsku. Język wybrany już w przeglądarce zostaje.",
   "app.changelog.1_4_3":
     "2026-10-25: przycisk Przewodnik w stopce obrysowuje przerywaną ramką sześć części ekranu i je podpisuje (wyniki zbiorcze, spis plików, opcje wyświetlania, pole danych, skala tolerancji, dane liczbowe), jak na rysunku w manuskrypcie. Otwiera się sam raz, przy pierwszym wyniku pokazanym w danej przeglądarce; kliknięcia przechodzą do aplikacji, a Escape go zamyka. Parametry pomiaru i historia analizy wracają w trybie eksperckim. W motywie ciemnym wykres po przełączeniu motywu rysuje się od nowa w ciemnych kolorach, krzywe i punkty są jaśniejsze, a logotypy partnerów są jasnoszare zamiast leżeć na białym pasku.",
   "app.changelog.1_4_2":
