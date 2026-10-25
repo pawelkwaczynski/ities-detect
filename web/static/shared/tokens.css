@@ -97,6 +97,11 @@
     --chart-frame: rgba(255, 255, 255, 0.20);
     --chart-zero: #8E8E93;
     --chart-baseline: #E5E7EB;
+    /* Curves and points one step lighter, so they keep their contrast on the dark card. */
+    --fwd: #A3B1C6;
+    --bwd: #9CC2A8;
+    --pt-tpra: #60A5FA;
+    --pt-analyte: #F87171;
     --verdict-quality-bg: rgba(156, 163, 175, 0.14);
     --selection: rgba(10, 132, 255, 0.4);
     --scrollbar: rgba(255, 255, 255, 0.28);
@@ -141,6 +146,11 @@
   --chart-frame: rgba(255, 255, 255, 0.20);
   --chart-zero: #8E8E93;
   --chart-baseline: #E5E7EB;
+  /* Curves and points one step lighter, so they keep their contrast on the dark card. */
+  --fwd: #A3B1C6;
+  --bwd: #9CC2A8;
+  --pt-tpra: #60A5FA;
+  --pt-analyte: #F87171;
   --verdict-quality-bg: rgba(156, 163, 175, 0.14);
   --selection: rgba(10, 132, 255, 0.4);
   --scrollbar: rgba(255, 255, 255, 0.28);

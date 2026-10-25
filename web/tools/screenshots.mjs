@@ -40,6 +40,18 @@ const FILES = [
   return dest;
 });
 
+// Fig. 8 of the manuscript: a detected street sample in front, a few neighbours so the
+// cumulative results are not empty. Original lab file names, read from the lab folder.
+const FIGURE_MAIN = "500uL_167_MI40uL_Scan3.txt";
+const FIGURE_FILES = [
+  "Pozytywne/500uL_167_MI40uL_Scan3.txt",
+  "Pozytywne/Komercja_52_1_4 300uL_IM20uL.txt",
+  "Pozytywne/174-2_40uL TPrA_100uLsample_last.txt",
+  "Pozytywne/160_2b_100ul_TPrA.txt",
+  "Pozytywne/93P_300ul_TPra(1).txt",
+  "Negatywy/BBR pH 3 CV 50uM codeine + 30 uM TPrA 2.txt",
+].map((rel) => path.join(LAB, rel));
+
 const TPRA_ONLY_FILE = (() => {
   const name = "BRB pH 10 CV 50uM codeine + 50uM TPrA 2.txt";
   const dest = path.join(STAGE, name);
@@ -190,7 +202,9 @@ async function setPrefs(cdp, lang, theme) {
   await evaluate(
     cdp,
     `localStorage.setItem('analizatory-lang', '${lang}');` +
-      `localStorage.setItem('ities-theme', '${theme}');true`
+      `localStorage.setItem('ities-theme', '${theme}');` +
+      // The guide opens by itself on the first result; the shots below ask for it explicitly.
+      `localStorage.setItem('ities-guide-seen', '1');true`
   );
 }
 
@@ -332,6 +346,49 @@ async function main() {
       await sleep(600);
       await shot(cdp, `ities-result-desktop-${lang}-${theme}.png`);
     }
+
+    // ---------------------------------------------------------------- guide
+    // The screen with the guide on is the figure for the manuscript, in both languages.
+    // Taken at twice the pixel density, so the chart canvas is drawn sharp for print;
+    // the scale-1 rule above is about phone emulation, the desktop viewport keeps 2x.
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width: 1440,
+      height: 900,
+      deviceScaleFactor: 2,
+      mobile: false,
+    });
+    for (const lang of ["en", "pl"]) {
+      await setPrefs(cdp, lang, "light");
+      await reload(cdp);
+      await waitExpr(cdp, HAS_VERDICT, 180000);
+      await waitExpr(cdp, ENGINE_READY, 180000);
+      await waitExpr(cdp, "!document.getElementById('batch-progress').open", 30000);
+      await evaluate(cdp, "document.getElementById('btn-guide').click();true");
+      await waitExpr(cdp, "document.querySelectorAll('.guide-box').length >= 6", 10000);
+      // The close button is for people, not for the printed figure.
+      await evaluate(cdp, "document.querySelector('.guide-close').style.visibility = 'hidden';true");
+      await sleep(300);
+      await shot(cdp, `ities-guide-desktop-${lang}.png`);
+      const labels = await evaluate(
+        cdp,
+        "[...document.querySelectorAll('.guide-label')].map((n) => n.textContent).join(' | ')"
+      );
+      report.push(`guide ${lang}: ${labels}`);
+      await evaluate(cdp, "document.querySelector('.guide-close').click();true");
+    }
+    await setViewport(cdp, 1440, 900);
+
+    // ---------------------------------------------------------------- theme switch
+    // A theme switch without a reload has to redraw the chart in the new colours.
+    await setPrefs(cdp, "pl", "light");
+    await reload(cdp);
+    await waitExpr(cdp, HAS_VERDICT, 180000);
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    await waitExpr(cdp, "!document.getElementById('batch-progress').open", 30000);
+    await evaluate(cdp, "[...document.querySelectorAll('.seg-theme button')].pop().click();true");
+    await sleep(700);
+    await shot(cdp, "ities-theme-switch-dark-pl.png");
+    report.push("theme switch: " + (await evaluate(cdp, "document.documentElement.getAttribute('data-theme')")));
 
     // ------------------------------------------- toolbar, list summary, many files
     // The shape of the interface after addendum 2 and 3: seven controls in the bar,
@@ -621,6 +678,47 @@ async function main() {
        })`
     );
     report.push("folder via drop (" + dropped + " entries): " + dropStats);
+
+    // ---------------------------------------------------------------- figure for the manuscript
+    // Fig. 8: the guide on a detected street sample, at twice the pixel density for print.
+    await go(cdp, BASE + "/ities/");
+    await waitExpr(cdp, ENGINE_READY, 180000);
+    await clearThroughUi(cdp);
+    await setInputFiles(cdp, FIGURE_FILES.filter((p) => fs.existsSync(p)));
+    await waitExpr(cdp, `document.querySelectorAll('.file-row').length >= ${FIGURE_FILES.length}`, 180000);
+    await waitExpr(cdp, "!document.getElementById('batch-progress').open", 180000);
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width: 1440,
+      height: 900,
+      deviceScaleFactor: 2,
+      mobile: false,
+    });
+    for (const lang of ["en", "pl"]) {
+      await setPrefs(cdp, lang, "light");
+      await reload(cdp);
+      await waitExpr(cdp, ENGINE_READY, 180000);
+      await waitExpr(cdp, "!document.getElementById('batch-progress').open", 60000);
+      await evaluate(
+        cdp,
+        `[...document.querySelectorAll('.file-row')].find((b) => b.textContent.includes(${JSON.stringify(FIGURE_MAIN)}))?.click();true`
+      );
+      await waitExpr(cdp, HAS_VERDICT, 60000);
+      await sleep(600);
+      await evaluate(cdp, "document.getElementById('btn-guide').click();true");
+      await waitExpr(cdp, "document.querySelectorAll('.guide-box').length >= 6", 10000);
+      await evaluate(cdp, "document.querySelector('.guide-close').style.visibility = 'hidden';true");
+      await sleep(400);
+      await shot(cdp, `fig8-ities-guide-${lang}@2x.png`);
+      report.push(
+        `fig8 ${lang}: ` +
+          (await evaluate(
+            cdp,
+            "document.querySelector('.verdict-word')?.textContent + ' | ' + document.querySelectorAll('.guide-box').length + ' frames | ' + document.querySelectorAll('.file-row').length + ' files'"
+          ))
+      );
+      await evaluate(cdp, "document.querySelector('.guide-close').click();true");
+    }
+    await setViewport(cdp, 1440, 900);
 
     // ---------------------------------------------------------------- versions
     for (const lang of ["en", "pl"]) {

@@ -983,6 +983,16 @@ body.app-body {
 
 .status-right a { color: var(--text-secondary); text-decoration: none; }
 .status-right a:hover { color: var(--text); }
+.footer-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  min-height: 0;
+  font: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.footer-link:hover { color: var(--text); }
 
 .status-dot {
   width: 8px;
@@ -2142,3 +2152,54 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
 /* Owner decision 17.09 23:50: the status bar under the toolbar is retired; the sidebar
    filter list carries the counts. The element stays in the DOM for the summary logic. */
 .summary-bar[hidden] { display: none; }
+
+/* ---------------------------------------------------------------- guide */
+/* Dashed frames with the names of the screen regions, drawn on top of the page. The
+   layer ignores the pointer, so the application underneath keeps working. */
+.guide-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  /* Orange 700: white label text on it is 5.2:1. */
+  --guide: #C2410C;
+}
+
+.guide-box {
+  position: fixed;
+  border: 2px dashed var(--guide);
+  border-radius: 12px;
+}
+
+.guide-label {
+  position: absolute;
+  top: -11px;
+  left: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--guide);
+  color: #fff;
+  font: 700 11px/1.1 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.guide-box.label-below .guide-label { top: auto; bottom: -11px; }
+
+.guide-close {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  pointer-events: auto;
+  border: 2px solid var(--guide);
+  color: var(--guide);
+  background: var(--bg-card, #fff);
+  font-weight: 600;
+}
+
+#btn-guide.is-on { color: #C2410C; font-weight: 600; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #btn-guide.is-on { color: #FB923C; }
+}
+:root[data-theme="dark"] #btn-guide.is-on { color: #FB923C; }

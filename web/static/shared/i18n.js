@@ -75,6 +75,15 @@ const EN = {
   "toolbar.algoVersionDefault": "Algorithm version: {version} (default)",
   "toolbar.algoVersionLabel": "Algorithm version",
   "toolbar.expert": "Expert mode",
+  "toolbar.guide": "Guide",
+  "tip.guide": "Outlines the parts of the screen and names them. Clicks still reach the application; Escape or this button closes it.",
+  "guide.cumulative": "Cumulative results",
+  "guide.inventory": "File inventory",
+  "guide.display": "Display options",
+  "guide.data": "Data display",
+  "guide.tolerance": "Tolerance scale",
+  "guide.numerical": "Numerical data",
+  "guide.close": "Close guide",
   "toolbar.view": "View",
   "toolbar.viewFiles": "Files",
   "toolbar.viewTable": "Table",
@@ -447,7 +456,7 @@ const EN = {
   "peaks.meaning.2": "Positive peak potential of TPrA⁺ (point 2): the standard ion transfers from the aqueous to the organic phase on the forward scan.",
   "peaks.meaning.3": "Negative peak potential of the analyte cation A⁺ (point 3): back transfer from the organic to the aqueous phase on the reverse scan.",
   "peaks.meaning.4": "Positive peak potential of the analyte cation A⁺ (point 4): transfer from the aqueous to the organic phase on the forward scan.",
-  "peaks.meaning.5": "Formal Galvani potential difference of TPrA⁺ transfer (E5), the midpoint of points 1 and 2. Calibration shifts the axis so that E5 equals −0.091 V, the literature value for TPrA⁺ transfer at the water||1,2-DCE interface.",
+  "peaks.meaning.5": "Formal Galvani potential difference of TPrA⁺ transfer (E5), the midpoint of points 1 and 2. Calibration shifts the whole axis so that E5 sits at −0.091 V, the literature value for TPrA⁺ transfer at the water||1,2-DCE interface. After calibration E5 therefore always reads −0.091 V and serves as the reference for E6.",
   "peaks.meaning.6": "Formal Galvani potential difference of A⁺ transfer (E6), the midpoint of points 3 and 4. The verdict is based on δΔE = E6 − E5, about 0.350 V for amphetamine.",
   "peaks.meaning.5raw": "Half-wave potential of TPrA⁺ (E5), the midpoint of points 1 and 2, on the instrument scale before calibration.",
   "peaks.meaning.6raw": "Half-wave potential of A⁺ (E6), the midpoint of points 3 and 4, on the instrument scale before calibration. δΔE = E6 − E5 does not depend on calibration.",
@@ -636,6 +645,8 @@ const EN = {
 
   "print.session": "Session: {name}",
 
+  "app.changelog.1_4_3":
+    "2026-10-25: a Guide button in the footer outlines the six parts of the screen with dashed frames and names them (cumulative results, file inventory, display options, data display, tolerance scale, numerical data), as in the manuscript figure. It opens once by itself at the first result shown in a browser; clicks pass through to the application and Escape closes it. Measurement parameters and analysis history come back in expert mode. In the dark theme the chart redraws in dark colours after a theme switch, curves and points are lighter, and the partner logos are light grey instead of sitting on a white strip.",
   "app.changelog.1_4_2":
     "2026-10-25: the distance between the two pair midpoints is called δΔE, as in the manuscript (formerly ΔE_s). On the chart it is typeset like a formula, with δ and E in italic. CSV column names do not change.",
   "app.changelog.1_4_1":
@@ -706,6 +717,15 @@ const PL = {
   "toolbar.algoVersionDefault": "Wersja algorytmu: {version} (domyślna)",
   "toolbar.algoVersionLabel": "Wersja algorytmu",
   "toolbar.expert": "Tryb ekspercki",
+  "toolbar.guide": "Przewodnik",
+  "tip.guide": "Obrysowuje części ekranu i podpisuje je. Kliknięcia dalej działają w aplikacji; zamyka Escape albo ten przycisk.",
+  "guide.cumulative": "Wyniki zbiorcze",
+  "guide.inventory": "Spis plików",
+  "guide.display": "Opcje wyświetlania",
+  "guide.data": "Pole danych",
+  "guide.tolerance": "Skala tolerancji",
+  "guide.numerical": "Dane liczbowe",
+  "guide.close": "Zamknij przewodnik",
   "toolbar.view": "Widok",
   "toolbar.viewFiles": "Pliki",
   "toolbar.viewTable": "Tabela",
@@ -1078,7 +1098,7 @@ const PL = {
   "peaks.meaning.2": "Potencjał piku dodatniego TPrA⁺ (punkt 2): jon wzorca przechodzi z fazy wodnej do organicznej podczas skanu w przód.",
   "peaks.meaning.3": "Potencjał piku ujemnego kationu analitu A⁺ (punkt 3): powrót z fazy organicznej do wodnej podczas skanu wstecz.",
   "peaks.meaning.4": "Potencjał piku dodatniego kationu analitu A⁺ (punkt 4): przejście z fazy wodnej do organicznej podczas skanu w przód.",
-  "peaks.meaning.5": "Formalna różnica potencjałów Galvaniego przejścia TPrA⁺ (E5), środek punktów 1 i 2. Kalibracja przesuwa oś tak, żeby E5 wynosiło −0,091 V, czyli wartość literaturową dla przejścia TPrA⁺ przez granicę woda||1,2-DCE.",
+  "peaks.meaning.5": "Formalna różnica potencjałów Galvaniego przejścia TPrA⁺ (E5), środek punktów 1 i 2. Kalibracja przesuwa całą oś tak, żeby E5 wypadło na −0,091 V, czyli na wartości literaturowej dla przejścia TPrA⁺ przez granicę woda||1,2-DCE. Dlatego po kalibracji E5 zawsze wynosi −0,091 V i służy jako punkt odniesienia dla E6.",
   "peaks.meaning.6": "Formalna różnica potencjałów Galvaniego przejścia A⁺ (E6), środek punktów 3 i 4. Werdykt opiera się na δΔE = E6 − E5, dla amfetaminy około 0,350 V.",
   "peaks.meaning.5raw": "Potencjał półfali TPrA⁺ (E5), środek punktów 1 i 2, w skali aparatu przed kalibracją.",
   "peaks.meaning.6raw": "Potencjał półfali A⁺ (E6), środek punktów 3 i 4, w skali aparatu przed kalibracją. δΔE = E6 − E5 nie zależy od kalibracji.",
@@ -1270,6 +1290,8 @@ const PL = {
 
   "print.session": "Sesja: {name}",
 
+  "app.changelog.1_4_3":
+    "2026-10-25: przycisk Przewodnik w stopce obrysowuje przerywaną ramką sześć części ekranu i je podpisuje (wyniki zbiorcze, spis plików, opcje wyświetlania, pole danych, skala tolerancji, dane liczbowe), jak na rysunku w manuskrypcie. Otwiera się sam raz, przy pierwszym wyniku pokazanym w danej przeglądarce; kliknięcia przechodzą do aplikacji, a Escape go zamyka. Parametry pomiaru i historia analizy wracają w trybie eksperckim. W motywie ciemnym wykres po przełączeniu motywu rysuje się od nowa w ciemnych kolorach, krzywe i punkty są jaśniejsze, a logotypy partnerów są jasnoszare zamiast leżeć na białym pasku.",
   "app.changelog.1_4_2":
     "2026-10-25: odległość między środkami dwóch par nazywa się δΔE, jak w manuskrypcie (wcześniej ΔE_s). Na wykresie jest złożona jak wzór, z δ i E kursywą. Nazwy kolumn w CSV się nie zmieniają.",
   "app.changelog.1_4_1":

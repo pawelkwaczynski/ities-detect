@@ -68,6 +68,16 @@ const DYNAMIC = {
     "app.changelog.1_4_0",
     "app.changelog.1_4_1",
     "app.changelog.1_4_2",
+    "app.changelog.1_4_3",
+  ],
+  // ui/guide.js reads the region names out of its table
+  "guide.<region>": [
+    "guide.cumulative",
+    "guide.inventory",
+    "guide.display",
+    "guide.data",
+    "guide.tolerance",
+    "guide.numerical",
   ],
   "login.<server error>": ["login.invalid", "login.rateLimited"],
   // shared/partners.js reads the key out of its table, so the literal call is invisible

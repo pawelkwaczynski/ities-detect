@@ -1,5 +1,5 @@
 import { applyStatic, locale, t } from "/shared/i18n.js";
-import { mountPrefs } from "/shared/prefs.js";
+import { THEME_EVENT, mountPrefs } from "/shared/prefs.js";
 import { installTooltips } from "/shared/tooltip.js";
 import { installHubShortcut } from "/shared/appswitch.js";
 import { mountPartners } from "/shared/partners.js";
@@ -20,6 +20,7 @@ import {
 } from "./ui/format.js";
 import { renderSidebar, siblingFileId } from "./ui/sidebar.js";
 import { renderResult } from "./ui/result.js";
+import { guideSeen, installGuide, openGuide } from "./ui/guide.js";
 import { renderTable } from "./ui/table.js";
 import { renderMulti } from "./ui/multi.js";
 import {
@@ -43,8 +44,9 @@ import {
   SESSION_FILE_WARN_BYTES,
 } from "./ui/session.js";
 
-export const APP_VERSION = "1.4.2";
+export const APP_VERSION = "1.4.3";
 export const APP_CHANGELOG_KEYS = [
+  "app.changelog.1_4_3",
   "app.changelog.1_4_2",
   "app.changelog.1_4_1",
   "app.changelog.1_4_0",
@@ -2135,6 +2137,9 @@ function renderFileView() {
     },
     onManual: (manual) => runManual(manual),
   });
+  // The first result this browser shows opens the guide once; the Guide button in the
+  // footer brings it back whenever it is wanted.
+  if (shown && !guideSeen()) openGuide();
 }
 
 // Several files at once. The compact cards and the comparison chart live in
@@ -2322,6 +2327,9 @@ function exportPdf(scope) {
 
 function wireUi() {
   installTooltips();
+  installGuide($("btn-guide"));
+  // Charts are drawn on canvas with the colours of the moment; a theme switch redraws them.
+  document.addEventListener(THEME_EVENT, () => renderContent());
   mountPrefs($("app-prefs"), {
     onLang: () => {
       paintStatus();

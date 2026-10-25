@@ -414,21 +414,18 @@ button.primary:hover:not(:disabled) {
   opacity: 1;
 }
 
-/* The logos are never recoloured, only desaturated. On the dark surface the row gets
-   a light backing instead, so a dark wordmark stays readable without touching it. */
+/* On the dark surface a light backing behind the row looked like a pasted sticker.
+   The files have transparent backgrounds, so the desaturated logos are inverted to light
+   grey instead; colour on hover is dropped there, a dark wordmark would vanish. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .partner-logos {
-    background: rgba(255, 255, 255, 0.86);
-    border-radius: 8px;
-    padding: 4px 8px;
-  }
+  :root:not([data-theme="light"]) .partner-logo { filter: grayscale(1) invert(1); opacity: 0.62; }
+  :root:not([data-theme="light"]) .partner-logo:hover,
+  :root:not([data-theme="light"]) .partner-logo:focus-visible { filter: grayscale(1) invert(1); opacity: 0.95; }
 }
 
-:root[data-theme="dark"] .partner-logos {
-  background: rgba(255, 255, 255, 0.86);
-  border-radius: 8px;
-  padding: 4px 8px;
-}
+:root[data-theme="dark"] .partner-logo { filter: grayscale(1) invert(1); opacity: 0.62; }
+:root[data-theme="dark"] .partner-logo:hover,
+:root[data-theme="dark"] .partner-logo:focus-visible { filter: grayscale(1) invert(1); opacity: 0.95; }
 
 @media (prefers-reduced-motion: reduce) {
   .partner-logo { transition: none; }

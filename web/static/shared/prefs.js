@@ -16,6 +16,10 @@ export function getTheme() {
   return "system";
 }
 
+// CSS follows the theme by itself, but canvas charts read their colours once when they
+// draw. This event tells a page to draw again after the theme changed.
+export const THEME_EVENT = "analizatory-theme";
+
 export function applyTheme(mode) {
   if (mode === "system") document.documentElement.removeAttribute("data-theme");
   else document.documentElement.setAttribute("data-theme", mode);
@@ -24,6 +28,14 @@ export function applyTheme(mode) {
   } catch (_) {
     /* private mode */
   }
+  document.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { mode } }));
+}
+
+// In "system" mode the operating system can switch between light and dark at any time.
+if (typeof window !== "undefined" && window.matchMedia) {
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+    if (getTheme() === "system") document.dispatchEvent(new CustomEvent(THEME_EVENT, { detail: { mode: "system" } }));
+  });
 }
 
 // One segmented control. Options carry a label key so a language switch can relabel

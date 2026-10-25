@@ -376,7 +376,7 @@ async function main() {
 
     await evaluate(
       cdp,
-      "localStorage.setItem('analizatory-lang','pl');localStorage.setItem('ities-theme','light');true"
+      "localStorage.setItem('analizatory-lang','pl');localStorage.setItem('ities-theme','light');localStorage.setItem('ities-guide-seen','1');true"
     );
     await reload(cdp);
 
@@ -1491,6 +1491,57 @@ async function main() {
       `open=${preview.open}, header icon ${preview.head} px, preview image ${preview.shown} px from a ${preview.natural} px file, ` +
         `caption in ${preview.captionParts} parts with a ${preview.captionGap} px gap, centred=${preview.centred}, ` +
         `closed by click=${closedByClick}, closed by Escape=${closedByEscape}, caption "${preview.caption.trim().slice(0, 60)}"`
+    );
+
+    step("jj guide");
+    // JJ: the guide frames the regions of the screen with their names, lets clicks
+    // through, closes on Escape, and opens by itself only on the first result.
+    await clearThroughUi(cdp);
+    await importSingle(cdp, referencePaths[0]);
+    await sleep(400);
+    await evaluate(cdp, "document.getElementById('btn-guide').click();true");
+    await waitExpr(cdp, "document.querySelectorAll('.guide-box').length > 0", 10000);
+    const guide = JSON.parse(await evaluate(cdp, `JSON.stringify({
+      boxes: document.querySelectorAll('.guide-box').length,
+      labels: [...document.querySelectorAll('.guide-label')].map((n) => n.textContent),
+      pressed: document.getElementById('btn-guide').getAttribute('aria-pressed'),
+      through: (() => {
+        const r = document.querySelector('.guide-box').getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        return !!hit && !hit.closest('.guide-layer');
+      })()
+    })`));
+    for (const type of ["rawKeyDown", "keyUp"]) {
+      await cdp.send("Input.dispatchKeyEvent", {
+        type,
+        key: "Escape",
+        code: "Escape",
+        windowsVirtualKeyCode: 27,
+        nativeVirtualKeyCode: 27,
+      });
+    }
+    await sleep(300);
+    const guideClosed = await evaluate(
+      cdp,
+      "!document.querySelector('.guide-layer') && document.getElementById('btn-guide').getAttribute('aria-pressed') === 'false'"
+    );
+    // A browser that has not seen the guide gets it with the next result, once.
+    await evaluate(cdp, "localStorage.removeItem('ities-guide-seen');document.querySelector('.file-item .file-row').click();true");
+    await sleep(600);
+    const autoOpened = await evaluate(cdp, "!!document.querySelector('.guide-layer')");
+    await evaluate(cdp, "document.querySelector('.guide-close').click();document.querySelector('.file-item .file-row').click();true");
+    await sleep(600);
+    const notAgain = await evaluate(
+      cdp,
+      "!document.querySelector('.guide-layer') && localStorage.getItem('ities-guide-seen') === '1'"
+    );
+    record(
+      report,
+      "jj the guide frames six regions, lets clicks through, closes on Escape and opens by itself once",
+      guide.boxes === 6 && guide.pressed === "true" && guide.through === true &&
+        guideClosed === true && autoOpened === true && notAgain === true,
+      `${guide.boxes} frames (${guide.labels.join(" | ")}), button pressed=${guide.pressed}, clicks through=${guide.through}, ` +
+        `closed by Escape=${guideClosed}, opened by itself on the first result=${autoOpened}, not again=${notAgain}`
     );
 
     step("hh hub tile opens the application");

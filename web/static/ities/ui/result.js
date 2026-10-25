@@ -439,14 +439,19 @@ function peaksPanel(result, opts) {
 
 // ---------------------------------------------------------------- folded sections
 
-// Measurement parameters and analysis history are off the result screen for now. The
-// code stays as it was: set this to true and both sections come back. File metadata
+// Measurement parameters and analysis history are shown only in expert mode, where the
+// corrections they record are made; set this to true to show them always. File metadata
 // is always shown. Exports and the printed report are not affected.
 const SHOW_PARAMS_AND_HISTORY = false;
 
+// What the operator opened stays open when the screen is drawn again, for example
+// after a theme switch.
+const foldOpen = new Map();
+
 function foldSection(titleKey, build, open) {
   const details = el("details", "card fold");
-  details.open = !!open;
+  details.open = foldOpen.has(titleKey) ? foldOpen.get(titleKey) : !!open;
+  details.addEventListener("toggle", () => foldOpen.set(titleKey, details.open));
   const summary = el("summary");
   summary.append(el("span", "fold-title", t(titleKey)));
   details.appendChild(summary);
@@ -691,7 +696,7 @@ export function renderResult(host, opts) {
 
   if (opts.expertPanel) host.appendChild(opts.expertPanel);
 
-  if (SHOW_PARAMS_AND_HISTORY) {
+  if (SHOW_PARAMS_AND_HISTORY || opts.expert) {
     host.appendChild(paramsSection(result, constants, opts.calibrated));
     host.appendChild(historySection(file, result));
   }

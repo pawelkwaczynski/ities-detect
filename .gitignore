@@ -3,6 +3,7 @@ samples/
 wyniki_analizy/
 *.json
 !kalibracja_amfetamina.json
+!.zenodo.json
 !web/algo/versions.json
 !web/algo/peakwise_versions.json
 !web/tools/package.json

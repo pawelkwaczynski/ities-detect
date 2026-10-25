@@ -1,0 +1,21 @@
+{
+  "title": "ITIES Detect: presumptive amphetamine detection from cyclic voltammograms at the water|1,2-dichloroethane interface",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Kwaczyński, Paweł",
+      "orcid": "0009-0004-0627-3621",
+      "affiliation": "University of Humanities and Economics in Lodz"
+    }
+  ],
+  "license": "MIT",
+  "keywords": [
+    "cyclic voltammetry",
+    "ITIES",
+    "liquid-liquid interface",
+    "amphetamine",
+    "tetrapropylammonium",
+    "Pyodide"
+  ],
+  "description": "Rule-based analysis of cyclic voltammograms recorded at the polarised water|1,2-dichloroethane interface. The script finds the TPrA+ reference pair, shifts the potential axis so that its midpoint is at -0.091 V, finds the analyte pair and compares the distance between the pair midpoints with 0.350 V. The web application runs the same Python file in the browser with Pyodide; measurement files stay on the user's computer."
+}
