@@ -1,5 +1,54 @@
 [
   {
+    "version": "1.1",
+    "date": "2026-10-25",
+    "file": "peakwise_algo_v1.1.py",
+    "sha256": "66e25f0a8446f6dfcb8e900ef92e265f89aee2ece9f36b2121c0f519fa0a2436",
+    "size_bytes": 53601,
+    "notebook_cell_sha256": "047f739744fc44ff1a0405bbd96b5e3dd8e09573f2744d96b89d20939e4481a3",
+    "notebook_state": "2026-10-25",
+    "default": true,
+    "changelog": [
+      "komórka SETUP notebooka w stanie z 25.10.2026, z poprawkami z przeglądu kodu",
+      "parser porównuje nazwy kolumn bez wielkości liter, spacji i znaków, a przy trzech i więcej kolumnach bez znanego nagłówka odrzuca plik zamiast zgadywać osie",
+      "parser usuwa wiersz bez pary liczb E i I w całości, więc prąd nie przesuwa się względem potencjału, a liczba odrzuconych wierszy trafia do uwag",
+      "parser odrzuca plik, gdy nazwa kolumny prądu albo potencjału kończy się jednostką z przedrostkiem (np. µA, mA, nA, pA, mV, z wielką literą A lub V; inne zapisy nie są rozpoznawane), i gdy jednej nazwie odpowiada więcej niż jedna kolumna, zamiast wybierać po cichu",
+      "pik anodowy na brzegu okna E albo bez lokalnego maksimum dostaje uwagę, wybór piku się nie zmienia",
+      "bazowa awaryjna ma własną etykietę, a gałąź katodowa bez bazowej jest opisana jako BRAK BAZOWEJ z uwagą, że Ip_c to wtedy surowy prąd",
+      "CSV ma pięć nowych kolumn notebooka: bl_a_regula, bl_c_regula, pik_a_na_krawedzi, korekta_reczna, ostrzezenia"
+    ],
+    "changelog_en": [
+      "notebook SETUP cell in its state of 2026-10-25, with the fixes from the code review",
+      "the parser matches column names without case, spaces and punctuation, and rejects a file with three or more unrecognised columns instead of guessing the axes",
+      "the parser drops a row without a pair of E and I numbers as a whole, so the current cannot shift against the potential, and the number of dropped rows goes into the notes",
+      "the parser rejects a file whose current or potential column name ends in a prefixed unit (e.g. µA, mA, nA, pA, mV, with an upper-case A or V; other spellings are not recognised), and one where a name matches more than one column, instead of choosing silently",
+      "an anodic peak at the edge of the E window or without a local maximum gets a note, the peak choice does not change",
+      "a fallback baseline has its own label, and a cathodic branch without a baseline is labelled BRAK BAZOWEJ with a note that Ip_c is then the raw current",
+      "the CSV has five new notebook columns: bl_a_regula, bl_c_regula, pik_a_na_krawedzi, korekta_reczna, ostrzezenia"
+    ],
+    "measured": {
+      "reference": "FDM SPE EXPERIMENTS (1).xlsx, last scan of each electrode",
+      "n_electrodes_in_table": 45,
+      "Ip_a": {
+        "mean_error_pct": 1.1,
+        "median_error_pct": 0.7,
+        "n_reference": 45,
+        "n_computed": 45,
+        "n_no_result": 0
+      },
+      "Ip_c": {
+        "mean_error_pct": 3.2,
+        "median_error_pct": 1.2,
+        "n_reference": 43,
+        "n_computed": 43,
+        "n_no_result": 0
+      },
+      "note": "Measured again on version 1.1 on 2026-10-25: on the 184 lab files the same values as for 1.0, version 1.1 adds flags and notes. A file with an unusual header or an empty cell is read more carefully by 1.1, and a column whose name ends in a prefixed unit is refused, so such a file can give a result different from 1.0.",
+      "note_pl": "Zmierzone ponownie na wersji 1.1 25.10.2026: na 184 plikach laboratorium te same wartości co dla 1.0, wersja 1.1 dodaje flagi i uwagi. Plik z nietypowym nagłówkiem albo pustą komórką wersja 1.1 czyta ostrożniej, a kolumnę z jednostką z przedrostkiem na końcu nazwy odrzuca, więc wynik takiego pliku może się różnić od 1.0.",
+      "date": "2026-10-25"
+    }
+  },
+  {
     "version": "1.0",
     "date": "2026-09-16",
     "file": "peakwise_algo_v1.0.py",
@@ -7,7 +56,7 @@
     "size_bytes": 44535,
     "notebook_cell_sha256": "9c0340708dcb31efac22c39a8fb5ccfb6ad9e73dbc37d66dc35de81ca48cb954",
     "notebook_state": "2026-08-23",
-    "default": true,
+    "default": false,
     "changelog": [
       "pierwsze zamrożenie komórki SETUP notebooka (stan 23.08.2026)",
       "ostatni cykl z pliku, bazowa MNK po [onset-0,35; onset-0,05] V",
