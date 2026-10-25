@@ -681,6 +681,8 @@ async function main() {
 
     // ---------------------------------------------------------------- figure for the manuscript
     // Fig. 8: the guide on a detected street sample, at twice the pixel density for print.
+    // The window is taller than the usual 900 px, so the whole chart card, legend
+    // included, is on the figure.
     await go(cdp, BASE + "/ities/");
     await waitExpr(cdp, ENGINE_READY, 180000);
     await clearThroughUi(cdp);
@@ -689,7 +691,7 @@ async function main() {
     await waitExpr(cdp, "!document.getElementById('batch-progress').open", 180000);
     await cdp.send("Emulation.setDeviceMetricsOverride", {
       width: 1440,
-      height: 900,
+      height: 1100,
       deviceScaleFactor: 2,
       mobile: false,
     });

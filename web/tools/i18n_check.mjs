@@ -70,6 +70,7 @@ const DYNAMIC = {
     "app.changelog.1_4_2",
     "app.changelog.1_4_3",
     "app.changelog.1_4_4",
+    "app.changelog.1_4_5",
   ],
   // ui/guide.js reads the region names out of its table
   "guide.<region>": [

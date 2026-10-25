@@ -645,6 +645,8 @@ const EN = {
 
   "print.session": "Session: {name}",
 
+  "app.changelog.1_4_5":
+    "2026-10-25: the legend under the chart names points 1 to 4, E5 and E6 with the same symbols as the Peaks panel, on screen, in the multi-file cards and in the printed report.",
   "app.changelog.1_4_4":
     "2026-10-25: an account can open in a set language on its first visit; the journal reviewer account opens in English. A language the browser has already chosen is kept.",
   "app.changelog.1_4_3":
@@ -1292,6 +1294,8 @@ const PL = {
 
   "print.session": "Sesja: {name}",
 
+  "app.changelog.1_4_5":
+    "2026-10-25: legenda pod wykresem nazywa punkty 1 do 4 oraz E5 i E6 tymi samymi symbolami co panel Piki, na ekranie, w kartach wielu plików i w raporcie do druku.",
   "app.changelog.1_4_4":
     "2026-10-25: konto może przy pierwszej wizycie otworzyć się w ustawionym języku; konto recenzenta czasopisma otwiera się po angielsku. Język wybrany już w przeglądarce zostaje.",
   "app.changelog.1_4_3":

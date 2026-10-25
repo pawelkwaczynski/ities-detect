@@ -44,8 +44,9 @@ import {
   SESSION_FILE_WARN_BYTES,
 } from "./ui/session.js";
 
-export const APP_VERSION = "1.4.4";
+export const APP_VERSION = "1.4.5";
 export const APP_CHANGELOG_KEYS = [
+  "app.changelog.1_4_5",
   "app.changelog.1_4_4",
   "app.changelog.1_4_3",
   "app.changelog.1_4_2",

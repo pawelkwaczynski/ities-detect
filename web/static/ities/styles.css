@@ -2203,3 +2203,6 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
   :root:not([data-theme="light"]) #btn-guide.is-on { color: #FB923C; }
 }
 :root[data-theme="dark"] #btn-guide.is-on { color: #FB923C; }
+
+/* Legend entries for points 1 to 4, E5 and E6 carry the same symbols as the Peaks panel. */
+.legend-symbol .peak-symbol { font-size: 1.08em; color: inherit; }

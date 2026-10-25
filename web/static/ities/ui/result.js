@@ -231,7 +231,15 @@ function legendList(items, className) {
     const li = el("li");
     const sw = el("span", "legend-sw legend-" + item.kind);
     sw.style.setProperty("--sw", item.color);
-    li.append(sw, el("span", null, item.label));
+    if (item.symbol) {
+      // The symbol is for the eye; a screen reader gets the plain label instead.
+      const shown = el("span", "legend-symbol");
+      shown.setAttribute("aria-hidden", "true");
+      shown.append(item.prefix + " ", peakSymbol(item.symbol, item.calibrated));
+      li.append(sw, shown, el("span", "visually-hidden", item.label));
+    } else {
+      li.append(sw, el("span", null, item.label));
+    }
     ul.appendChild(li);
   }
   return ul;

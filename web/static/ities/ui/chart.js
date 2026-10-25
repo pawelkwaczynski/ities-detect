@@ -1,6 +1,7 @@
 import uPlot from "/vendor/uplot/uPlot.esm.js";
 import { t } from "/shared/i18n.js";
 import { fmtNum, verdictInfo } from "./format.js";
+import { peakSymbolRuns } from "./symbols.js";
 
 // The plot follows the notebook: plot_cv_branches, style_cv_axes, finish_cv_plot and
 // set_colored_plot_title from algo/ities_algo_v1.1.py, rebuilt on uPlot draw hooks so
@@ -95,19 +96,28 @@ export function seriesLegend() {
 export function annotationLegend(result, calibrated) {
   const colors = palette();
   const items = [];
+  // Points and midpoints are named by their symbols, as in the Peaks panel; the plain
+  // label stays as the text fallback.
+  const symbol = (key, prefix) => ({
+    symbol: key,
+    prefix,
+    calibrated,
+    runs: [{ text: prefix + " " }, ...peakSymbolRuns(key, calibrated)],
+  });
   for (const key of ["1", "2", "3", "4"]) {
     if (pointE(result, key, calibrated) == null || pointI(result, key) == null) continue;
     items.push({
       kind: "dot",
       color: key === "1" || key === "2" ? colors.tpra : colors.analyte,
       label: t("chart.legend.p" + key),
+      ...symbol(key, key + ":"),
     });
   }
   if (midE(result, "5", calibrated) != null) {
-    items.push({ kind: "dash", color: colors.tpra, label: t("chart.legend.e5") });
+    items.push({ kind: "dash", color: colors.tpra, label: t("chart.legend.e5"), ...symbol("E5", "E5:") });
   }
   if (midE(result, "6", calibrated) != null) {
-    items.push({ kind: "dash", color: colors.analyte, label: t("chart.legend.e6") });
+    items.push({ kind: "dash", color: colors.analyte, label: t("chart.legend.e6"), ...symbol("E6", "E6:") });
   }
   if ((result.baseline_fits || {})["4"]) {
     items.push({ kind: "dash", color: colors.baseline, label: t("chart.legend.baseline") });
@@ -117,15 +127,52 @@ export function annotationLegend(result, calibrated) {
 
 // Pack the legend into centred rows, the way finish_cv_plot lays it out under the axes.
 // Widths are device pixels because uPlot draws on an unscaled canvas.
+// Runs on a canvas: plain or italic text, and stacks of a superscript over a subscript,
+// so a legend entry can carry the same symbol as the Peaks panel.
+function runFont(size, italic) {
+  return `${italic ? "italic " : ""}600 ${Math.round(size)}px ${FONT_STACK}`;
+}
+
+function runsWidth(ctx, runs, size) {
+  let width = 0;
+  for (const run of runs) {
+    if (run.sup != null || run.sub != null) {
+      ctx.font = runFont(size * 0.7, false);
+      width += Math.max(ctx.measureText(run.sup || "").width, ctx.measureText(run.sub || "").width) + size * 0.1;
+    } else {
+      ctx.font = runFont(size, run.italic);
+      width += ctx.measureText(run.text).width;
+    }
+  }
+  return width;
+}
+
+function drawRuns(ctx, runs, x, y, size) {
+  for (const run of runs) {
+    if (run.sup != null || run.sub != null) {
+      ctx.font = runFont(size * 0.7, false);
+      const w = Math.max(ctx.measureText(run.sup || "").width, ctx.measureText(run.sub || "").width);
+      if (run.sup) ctx.fillText(run.sup, x + size * 0.05, y - size * 0.34);
+      if (run.sub) ctx.fillText(run.sub, x + size * 0.05, y + size * 0.3);
+      x += w + size * 0.1;
+    } else {
+      ctx.font = runFont(size, run.italic);
+      ctx.fillText(run.text, x, y);
+      x += ctx.measureText(run.text).width;
+    }
+  }
+}
+
 function packLegend(items, maxWidth, ratio) {
   const swatch = 20 * ratio;
   const gap = 6 * ratio;
   const itemGap = 18 * ratio;
-  scratch.font = `600 ${Math.round(11 * ratio)}px ${FONT_STACK}`;
-  const measured = items.map((item) => ({
-    ...item,
-    width: swatch + gap + scratch.measureText(item.label).width,
-  }));
+  const size = 11 * ratio;
+  const measured = items.map((item) => {
+    scratch.font = runFont(size, false);
+    const text = item.runs ? runsWidth(scratch, item.runs, size) : scratch.measureText(item.label).width;
+    return { ...item, width: swatch + gap + text };
+  });
   const rows = [];
   let row = [];
   let rowWidth = 0;
@@ -583,7 +630,12 @@ export class CvChart {
           ctx.setLineDash([]);
         }
         ctx.fillStyle = colors.axis;
-        ctx.fillText(item.label, x + swatch + gap, y);
+        if (item.runs) {
+          drawRuns(ctx, item.runs, x + swatch + gap, y, 11 * ratio);
+        } else {
+          ctx.font = runFont(11 * ratio, false);
+          ctx.fillText(item.label, x + swatch + gap, y);
+        }
         x += item.width + itemGap;
       }
     });

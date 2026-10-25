@@ -52,6 +52,16 @@ function halfWave(tone) {
   return wrap("msubsup", m("mi", "E"), ion(tone), wrap("mrow", m("mn", "1"), m("mo", "/"), m("mn", "2")));
 }
 
+// The same symbols as runs for a canvas, which has no MathML: plain text, italic text
+// and stacks of a superscript over a subscript. Ion names carry a Unicode ⁺.
+export function peakSymbolRuns(key, calibrated) {
+  const ion = key === "1" || key === "2" || key === "E5" ? "TPrA⁺" : "A⁺";
+  if (key === "1" || key === "3") return [{ text: "E", italic: true }, { sup: "−", sub: ion }];
+  if (key === "2" || key === "4") return [{ text: "E", italic: true }, { sup: "+", sub: ion }];
+  if (!calibrated) return [{ text: "E", italic: true }, { sup: "1/2", sub: ion }];
+  return [{ text: "Δ" }, { sup: "aq", sub: "org" }, { text: "Φ", italic: true }, { sup: "′", sub: ion }];
+}
+
 // key: "1" to "4", "E5" or "E6"; calibrated decides the scale E5 and E6 are read on.
 export function peakSymbol(key, calibrated) {
   let body;
