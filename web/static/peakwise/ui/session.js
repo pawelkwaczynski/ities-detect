@@ -1,7 +1,6 @@
 import { t, locale } from "./i18n.js";
 import {
-  baselineLabel,
-  baselineWindowLabel,
+  baselineText,
   cycleLabel,
   fmtNum,
   fmtUnit,
@@ -11,6 +10,8 @@ import {
   warningText,
 } from "./format.js";
 import { renderOffscreenPng } from "./chart.js";
+import { quantityMarkup } from "./symbols.js";
+import { csvText } from "./csv_columns.js";
 
 const DB_NAME = "peakwise";
 const STORE = "session";
@@ -45,35 +46,10 @@ export async function loadSession() {
   });
 }
 
-function csvEscape(v) {
-  if (v == null) return "";
-  const s = String(v);
-  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-}
-
-// Columns are the notebook's own export (cv_wyniki_zbiorcze.csv), taken from the result the
-// module returns, plus provenance the notebook has no place for.
-const EXTRA = ["elektroda", "file_sha256", "algo_version", "algo_sha256", "analysed_at", "operator"];
-
-export function exportCsv(files, { operator, algoVersion, algoSha }) {
-  const rows = files.filter((f) => f.result && f.result.result_row);
-  if (!rows.length) return null;
-  const keys = Object.keys(rows[0].result.result_row);
-  const lines = [keys.concat(EXTRA).join(",")];
-  for (const file of rows) {
-    const row = file.result.result_row;
-    const cells = keys.map((k) => csvEscape(row[k]));
-    cells.push(
-      csvEscape(file.electrode),
-      csvEscape(file.sha256),
-      csvEscape(file.algoVersion || algoVersion),
-      csvEscape(file.algoSha || algoSha),
-      csvEscape(file.analysedAt),
-      csvEscape(operator || "")
-    );
-    lines.push(cells.join(","));
-  }
-  const blob = new Blob([lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+export function exportCsv(files, { operator } = {}) {
+  const content = csvText(files, { operator });
+  if (content == null) return null;
+  const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = "peakwise_session.csv";
@@ -103,7 +79,7 @@ function branchRows(result) {
       <td>${escapeHtml(fmtUnit(branch.Ip_max_nA, 1, "nA"))}</td>
       <td>${escapeHtml(fmtUnit(branch.Ip_curve_at_x_nA, 1, "nA"))}</td>
       <td>${escapeHtml(fmtUnit(branch.Ip_tangents_nA, 1, "nA"))}</td>
-      <td>${escapeHtml(baselineLabel(branch.baseline_rule_code))}, ${escapeHtml(baselineWindowLabel(branch.baseline_window))}</td>
+      <td>${escapeHtml(baselineText(branch))}</td>
     </tr>`);
   }
   return out.join("");
@@ -112,6 +88,9 @@ function branchRows(result) {
 export function buildPrintReport({ files, operator, config, algoVersion, algoSha }) {
   const now = new Date();
   const blocks = [];
+  const versions = [...new Set(files.filter((file) => file.result).map((file) =>
+    `v${file.algoVersion || file.result.algo_version || t("report.unknownVersion")} · SHA-256 ${file.algoSha || t("report.unknownVersion")}`
+  ))];
   const cfg = Object.entries(config || {})
     .filter(([k]) => k !== "CSV_COLUMNS")
     .map(([k, v]) => `${k} = ${Array.isArray(v) ? v.join(", ") : v}`)
@@ -119,8 +98,8 @@ export function buildPrintReport({ files, operator, config, algoVersion, algoSha
   blocks.push(`<header class="print-head">
     <h1>${escapeHtml(t("report.title"))}</h1>
     <p>${escapeHtml(now.toLocaleString(locale()))} &middot; ${escapeHtml(t("report.operator"))}: ${escapeHtml(operator || t("report.notGiven"))}</p>
-    <p>${escapeHtml(t("details.algo"))} v${escapeHtml(algoVersion)} &middot; SHA-256 ${escapeHtml(algoSha)}</p>
-    <p class="print-config">${escapeHtml(t("report.thresholds"))}: ${escapeHtml(cfg)}</p>
+    <p>${escapeHtml(t("report.versions"))}: ${escapeHtml(versions.join("; "))}</p>
+    <p class="print-config">${escapeHtml(t("report.currentThresholds", { v: algoVersion, sha: algoSha }))}: ${escapeHtml(cfg)}</p>
   </header>`);
 
   for (const file of files) {
@@ -130,16 +109,17 @@ export function buildPrintReport({ files, operator, config, algoVersion, algoSha
     const warnings = (result.warnings || []).map((w) => `<li>${escapeHtml(warningText(w))}</li>`).join("");
     blocks.push(`<section class="print-file">
       <h2>${escapeHtml(file.electrode)} &middot; ${escapeHtml(file.name)}</h2>
+      <p>${escapeHtml(t("details.algo"))} v${escapeHtml(file.algoVersion || result.algo_version || t("report.unknownVersion"))} &middot; SHA-256 ${escapeHtml(file.algoSha || t("report.unknownVersion"))}</p>
       <p class="print-verdict">${escapeHtml(statusWord(result.status))}</p>
       <p>${escapeHtml(statusNext(result.status))}</p>
       <p class="print-meta">${escapeHtml(t("details.fileSha"))}: ${escapeHtml(file.sha256 || "")}<br>
-         ${escapeHtml(t("metric.dEp"))}: ${escapeHtml(fmtUnit(result.dEp_mV, 1, "mV"))} &middot;
-         ${escapeHtml(t("metric.ratio"))}: ${escapeHtml(fmtNum(result.Ip_ratio, 3))} &middot;
+         ${quantityMarkup("dEp")}: ${escapeHtml(fmtUnit(result.dEp_mV, 1, "mV"))} &middot;
+         ${quantityMarkup("ratio")}: ${escapeHtml(fmtNum(result.Ip_ratio, 3))} &middot;
          ${escapeHtml(t("read.cycle"))}: ${escapeHtml(cycleLabel(result.cycle_used))}</p>
       ${png ? `<img src="${png}" alt="${escapeHtml(t("chart.title"))} ${escapeHtml(file.name)}">` : ""}
       <table class="print-points">
         <thead><tr>
-          <th></th><th>Ep</th><th>Ip</th><th>${escapeHtml(t("read.method"))}</th>
+          <th></th><th>${quantityMarkup("Ep")}</th><th>${quantityMarkup("Ip")}</th><th>${escapeHtml(t("read.method"))}</th>
           <th>${escapeHtml(t("details.maximum"))}</th>
           <th>${escapeHtml(t("details.curveAtX"))}</th>
           <th>${escapeHtml(t("details.tangents"))}</th>

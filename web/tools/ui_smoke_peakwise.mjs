@@ -3,7 +3,8 @@
 //
 // Sibling of tools/ui_smoke.mjs, which does the same job for ITIES Detect and is far
 // larger. This one only proves that the frame PeakWise borrowed from ITIES Detect 1.4 is
-// wired: login, three reference files, the counters in the status bar, a filter from the
+// wired: login, three reference files, the counters in the status bar, the quantity
+// symbols on the result card, the chart redraw after a theme change, a filter from the
 // source list, the Session menu, the logo preview, and the back arrow on the version
 // history page.
 //
@@ -259,6 +260,80 @@ async function main() {
       }
     );
 
+    // 3a. the six quantities on the result card are MathML symbols with a tooltip ---
+    await step(
+      "quantity symbols on the result card",
+      () =>
+        evaluate(
+          cdp,
+          "JSON.stringify([...document.querySelectorAll('.result-card .metric-label')].map((n) => ({" +
+            " math: !!n.querySelector('math.qty-symbol msub, math.qty-symbol mrow')," +
+            " tip: !!n.dataset.tooltipText, focusable: n.tabIndex === 0})))"
+        ),
+      (value) => {
+        const items = JSON.parse(value);
+        return items.length === 6 && items.every((i) => i.math && i.tip && i.focusable);
+      }
+    );
+
+    // 3b. the chart is drawn again after a theme change, from the switch and from the
+    // shared event alone (the way shared/prefs.js reports the system turning dark) -----
+    await step(
+      "chart redrawn after a theme change",
+      async () => {
+        const mark = "window.__pwCanvas = document.querySelector('.chart-host canvas'); true";
+        const fresh =
+          "!!document.querySelector('.chart-host canvas') &&" +
+          " document.querySelector('.chart-host canvas') !== window.__pwCanvas";
+        await evaluate(cdp, mark);
+        await evaluate(cdp, "document.querySelector('.seg-theme button[data-value=\"dark\"]').click(); true");
+        await sleep(400);
+        const bySwitch = await evaluate(cdp, fresh);
+        const theme = await evaluate(cdp, "document.documentElement.getAttribute('data-theme')");
+        await evaluate(cdp, mark);
+        await evaluate(
+          cdp,
+          "document.dispatchEvent(new CustomEvent('analizatory-theme', { detail: { mode: 'system' } })); true"
+        );
+        await sleep(400);
+        const byEvent = await evaluate(cdp, fresh);
+        await evaluate(cdp, "document.querySelector('.seg-theme button[data-value=\"light\"]').click(); true");
+        await sleep(300);
+        return JSON.stringify({ bySwitch, byEvent, theme });
+      },
+      (value) => {
+        const data = JSON.parse(value);
+        return data.bySwitch === true && data.byEvent === true && data.theme === "dark";
+      }
+    );
+
+    // 3c. the printed report names the quantities with the same symbols. window.print
+    // is stubbed, so the check reads what would be printed ---------------------------
+    await step(
+      "printed report with symbols",
+      async () => {
+        await evaluate(cdp, "window.__printed = 0; window.print = () => { window.__printed += 1; }; true");
+        await evaluate(cdp, "document.getElementById('export-print').click(); true");
+        await waitExpr(cdp, "document.querySelectorAll('#print-root .print-file').length === 3", 30000);
+        const data = await evaluate(
+          cdp,
+          "JSON.stringify({files: document.querySelectorAll('#print-root .print-file').length," +
+            " symbols: document.querySelectorAll('#print-root math.qty-symbol').length," +
+            " printed: window.__printed})"
+        );
+        await evaluate(
+          cdp,
+          "document.body.classList.remove('printing'); document.getElementById('print-root').hidden = true; true"
+        );
+        return data;
+      },
+      // two symbols in the line under the title, two in the table head, per file
+      (value) => {
+        const data = JSON.parse(value);
+        return data.files === 3 && data.symbols === 12 && data.printed === 1;
+      }
+    );
+
     // 4. a filter picked from the source list ------------------------------------
     await step(
       "filter from the sidebar list",
@@ -351,7 +426,7 @@ async function main() {
           data.here === "/peakwise/versions.html" &&
           data.back === "/peakwise/" &&
           data.appRows >= 2 &&
-          data.top.startsWith("1.1.0")
+          data.top.startsWith("1.2.0")
         );
       }
     );

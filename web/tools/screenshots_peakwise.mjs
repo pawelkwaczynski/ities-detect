@@ -93,6 +93,10 @@ class Cdp {
         problems.push("console.error: " + (msg.params.args || []).map((a) => a.value ?? a.description).join(" "));
       }
       if (msg.method === "Log.entryAdded" && msg.params?.entry?.level === "error") {
+        // The login page and the hub declare no icon, so Chrome asks for /favicon.ico and
+        // gets a 404. That is not PeakWise; it is skipped by URL, as in
+        // tools/ui_smoke_peakwise.mjs, never by message text.
+        if (String(msg.params.entry.url || "").endsWith("/favicon.ico")) return;
         problems.push("log: " + msg.params.entry.text + " " + (msg.params.entry.url || ""));
       }
     });
@@ -262,6 +266,27 @@ async function main() {
     await shot(cdp, "peakwise-result-desktop-en-light.png");
     report.push("engine status: " + (await evaluate(cdp, "document.getElementById('engine-status').textContent")));
 
+    // The chart card on its own, for the peak labels, and the tooltip a symbol opens
+    // under the pointer.
+    await evaluate(cdp, "document.querySelector('.chart-card').scrollIntoView({ block: 'start' }); true");
+    await sleep(400);
+    await shot(cdp, "peakwise-chart-desktop-en-light.png");
+    await evaluate(cdp, "document.querySelector('.result-card').scrollIntoView({ block: 'start' }); true");
+    await sleep(300);
+    const symbolAt = JSON.parse(
+      await evaluate(
+        cdp,
+        "JSON.stringify((({ left, top, width, height }) => ({ x: left + width / 2, y: top + height / 2 }))" +
+          "(document.querySelector('.metric-label .qty-symbol').getBoundingClientRect()))"
+      )
+    );
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: symbolAt.x, y: symbolAt.y });
+    await sleep(700);
+    await shot(cdp, "peakwise-tooltip-desktop-en-light.png");
+    report.push("tooltip: " + (await evaluate(cdp, "document.getElementById('app-tooltip').textContent")));
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: 5, y: 5 });
+    await sleep(300);
+
     // Polish and dark come from the keys the hub writes, so this shot is the proof that
     // one language and one theme really carry across the two apps.
     await setPrefs("pl", "dark");
@@ -269,6 +294,10 @@ async function main() {
     await waitExpr(cdp, HAS_RESULT);
     await sleep(800);
     await shot(cdp, "peakwise-result-desktop-pl-dark.png");
+    await evaluate(cdp, "document.querySelector('.chart-card').scrollIntoView({ block: 'start' }); true");
+    await sleep(400);
+    await shot(cdp, "peakwise-chart-desktop-pl-dark.png");
+    await evaluate(cdp, "document.querySelector('.result-card').scrollIntoView({ block: 'start' }); true");
     report.push(
       "prefs carried over: " +
         (await evaluate(

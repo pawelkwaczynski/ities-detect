@@ -4,7 +4,7 @@ import { setLang as setSharedLang, syncLangFromStorage } from "/shared/i18n.js";
 import { installHubShortcut } from "/shared/appswitch.js";
 import { mountPartners } from "/shared/partners.js";
 import { installTooltips } from "/shared/tooltip.js";
-import { createSegmented, getTheme } from "/shared/prefs.js";
+import { THEME_EVENT, applyTheme, createSegmented, getTheme } from "/shared/prefs.js";
 import { bucketCounts, electrodeFromFile, shaShort } from "./ui/format.js";
 import { renderSidebar, siblingFileId } from "./ui/sidebar.js";
 import { renderResultCard, renderDetails } from "./ui/result.js";
@@ -12,10 +12,6 @@ import { CvChart, chartLegend } from "./ui/chart.js";
 import { renderTable } from "./ui/table.js";
 import { buildPrintReport, exportCsv, loadSession, printReport, saveSession } from "./ui/session.js";
 import { APP_VERSION } from "./ui/app_version.js";
-
-// The hub and ITIES Detect already store the theme under this key. PeakWise reads and
-// writes the same one so a theme picked on any of the three pages holds for all of them.
-const THEME_KEY = "ities-theme";
 
 const $ = (id) => document.getElementById(id);
 
@@ -76,19 +72,6 @@ function persist() {
       })
       .catch(() => {});
   }, 250);
-}
-
-function applyTheme(mode) {
-  if (mode === "system") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", mode);
-  try {
-    localStorage.setItem(THEME_KEY, mode);
-  } catch (_) {
-    /* the choice just will not survive a reload */
-  }
-  // uPlot bakes the axis and grid colours into the canvas when it draws, so the chart has
-  // to be built again after a theme change, not only restyled.
-  if (chart && state.view === "files") renderFileView();
 }
 
 function setEngineStatus(text, { loading } = {}) {
@@ -229,7 +212,7 @@ function renderFileView() {
     p.textContent = t("chart.none");
     chartHost.appendChild(p);
   }
-  renderDetails(detailsHost, { file, result: file.result, config: engine.config });
+  renderDetails(detailsHost, { file, result: file.result, config: engine.config, configVersion: engine.version });
 }
 
 // One pill per PeakWise status, the same object the sidebar list filters by: clicking
@@ -387,7 +370,7 @@ async function addFiles(fileList) {
   renderAll();
   // Files are analysed as soon as they arrive, so the first result is on screen without
   // a second click. Adding more files while a run is going simply queues them.
-  if (added.length && engine.ready) await analyze(added);
+  if (added.length && engine.ready && !versionSwitching) await analyze(added);
 }
 
 async function analyzeOne(file, index, total) {
@@ -407,6 +390,10 @@ async function analyzeOne(file, index, total) {
 
 let running = false;
 let aborted = false;
+let versionSwitching = false;
+let versionRequest = 0;
+let versionSwitch = Promise.resolve();
+const queuedFiles = new Set();
 
 // The progress window is centred, shows the percentage large and the four PeakWise
 // counters underneath (brief 1.4, point I). It only opens for a real series: one file
@@ -419,7 +406,6 @@ function openProgress(total) {
   $("progress-source").textContent = t("progress.of", { done: 0, total });
   $("progress-error").hidden = true;
   $("progress-engine").textContent = readyLabel();
-  aborted = false;
   if (!dialog.open) dialog.showModal();
 }
 
@@ -446,8 +432,13 @@ function closeProgress() {
 }
 
 async function analyze(files) {
-  if (running) return;
+  if (versionSwitching) return;
+  if (running) {
+    for (const file of files) queuedFiles.add(file);
+    return;
+  }
   running = true;
+  aborted = false;
   $("btn-analyze").disabled = true;
   openProgress(files.length);
   updateProgress(0, files.length);
@@ -462,20 +453,27 @@ async function analyze(files) {
     setEngineStatus(readyLabel());
     persist();
   } catch (err) {
-    $("live-results").textContent = String(err.message || err);
-    setEngineStatus(t("engine.error"));
-    const box = $("progress-error");
-    box.textContent = String(err.message || err);
-    box.hidden = false;
+    if (!(versionSwitching && err.message === "Engine restarted")) {
+      $("live-results").textContent = String(err.message || err);
+      setEngineStatus(t("engine.error"));
+      const box = $("progress-error");
+      box.textContent = String(err.message || err);
+      box.hidden = false;
+    }
   } finally {
     running = false;
     closeProgress();
     $("btn-analyze").disabled = !state.files.length || !engine.ready;
     paintStatusBar();
+    if (!versionSwitching && queuedFiles.size) {
+      const pending = [...queuedFiles];
+      queuedFiles.clear();
+      await analyze(pending);
+    }
   }
 }
 
-// The ⓘ next to the version picker says which algorithm produced what is on screen.
+// The ⓘ next to the version picker identifies the selected engine.
 function paintAlgoInfo() {
   const info = $("algo-info");
   if (!info) return;
@@ -581,6 +579,8 @@ function toggleMenu(id) {
 }
 
 function clearSessionState() {
+  aborted = true;
+  queuedFiles.clear();
   state.files = [];
   state.selectedId = null;
   state.filter = "all";
@@ -636,6 +636,8 @@ function wireSessionMenu() {
     try {
       const data = JSON.parse(await file.text());
       if (data.app !== "peakwise" || !Array.isArray(data.files)) throw new Error("shape");
+      aborted = true;
+      queuedFiles.clear();
       state.files = data.files;
       state.operator = data.operator || "";
       state.sessionName = data.name || "";
@@ -687,11 +689,7 @@ function wireUi() {
     if (e.key === "Escape") closeMenus();
   });
   $("export-csv").addEventListener("click", () => {
-    exportCsv(state.files, {
-      operator: state.operator,
-      algoVersion: engine.version,
-      algoSha: engine.sha256,
-    });
+    exportCsv(state.files, { operator: state.operator });
     closeMenus();
   });
   $("export-print").addEventListener("click", () => {
@@ -712,18 +710,37 @@ function wireUi() {
   });
   $("progress-abort").addEventListener("click", () => {
     aborted = true;
+    queuedFiles.clear();
     closeProgress();
   });
   $("progress-close").addEventListener("click", () => closeProgress());
   $("algo-version").addEventListener("change", async (e) => {
     const v = e.target.value;
+    const request = ++versionRequest;
+    versionSwitching = true;
+    aborted = true;
     setEngineStatus(t("engine.loadingAlgo", { v }), { loading: true });
-    try {
-      await engine.switchVersion(v);
-      setEngineStatus(readyLabel());
-    } catch (err) {
-      showEngineError(err);
-    }
+    versionSwitch = versionSwitch.then(async () => {
+      if (request !== versionRequest) return;
+      try {
+        await engine.switchVersion(v);
+        if (request !== versionRequest) return;
+        versionSwitching = false;
+        queuedFiles.clear();
+        setEngineStatus(readyLabel());
+        renderAll();
+        // Not awaited: a file the worker never answers must not hold the chain, so a later
+        // switch can still restart the worker.
+        analyze(state.files.filter((file) => file.bytes));
+      } catch (err) {
+        if (request === versionRequest) {
+          versionSwitching = false;
+          queuedFiles.clear();
+          showEngineError(err);
+        }
+      }
+    });
+    await versionSwitch;
   });
 
   const content = $("content");
@@ -789,6 +806,8 @@ function mountPrefs() {
       retranslate();
     },
   });
+  // The theme is stored by shared/prefs.js under the key the hub and ITIES Detect use, so
+  // a theme picked on any of the three pages holds for all of them.
   const current = getTheme();
   applyTheme(current);
   const theme = createSegmented({
@@ -809,8 +828,11 @@ function mountPrefs() {
       theme.relabel();
     },
   };
-  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
-    if (getTheme() === "system") applyTheme("system");
+  // uPlot bakes the axis and grid colours into the canvas when it draws, so the chart has
+  // to be built again after a theme change, not only restyled. shared/prefs.js sends the
+  // event for a switch here and for the system turning dark or light in "system" mode.
+  document.addEventListener(THEME_EVENT, () => {
+    if (chart && state.view === "files") renderFileView();
   });
 }
 
@@ -834,7 +856,7 @@ async function boot() {
       paintStatusBar();
       $("btn-analyze").disabled = !state.files.length;
       const pending = state.files.filter((f) => f.bytes && !f.result);
-      if (pending.length) analyze(pending);
+      if (!versionSwitching && pending.length) analyze(pending);
     }
     if (ev.type === "progress" && ev.done >= ev.total) setEngineStatus(readyLabel());
     if (ev.type === "error" && ev.id == null) showEngineError(ev);

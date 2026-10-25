@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Release gate for PeakWise, run against the copy of the module that ships from this
-// directory: algo/peakwise_algo_v1.0.py in Pyodide must return exactly what the same file
-// returns in CPython, on every file of the lab set. Field by field, including the sampled
-// baseline points.
+// directory: the default algo/peakwise_algo_v<version>.py in Pyodide must return exactly
+// what the same file returns in CPython, on every file of the lab set. Field by field,
+// including the sampled baseline points. PW_ALGO_VERSION=1.0 checks an older version.
 //
 // Sibling of tools/parity_test.mjs, which does the same job for ITIES Detect. Two scripts
 // rather than one because the two gates compare different things: ITIES compares three
@@ -11,6 +11,9 @@
 // The CPython baseline and the notebook agreement are measurements, not code, and they were
 // produced in 10_peakwise_web_20260916. They are read from there instead of being copied, so
 // there is one of each. Neither travels in the deploy bundle; tools/ does not ship.
+// Each version has its own CPython baseline, made by tools/cpython_baseline.py there with
+// --mode raw --algo <module> --out-json: baseline_cpython.jsonl is 1.0 under its first
+// name, later versions are baseline_cpython_v<version>.jsonl. PW_BASELINE overrides the path.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,8 +26,12 @@ const HURNY = "/Users/pawelkwaczynski/Desktop/claude_brain/projekty/HURNY";
 const DATA_DIRS = ["SPE iterations", "Python"];
 const SKIP_EXT = new Set([".png", ".jpg", ".jpeg", ".xlsx", ".opju", ".md"]);
 const PW_MEASUREMENTS = path.resolve(ROOT, "../10_peakwise_web_20260916/wyniki");
-const BASELINE = path.join(PW_MEASUREMENTS, "baseline_cpython.jsonl");
-const NOTEBOOK_AGREEMENT = path.join(PW_MEASUREMENTS, "notebook_agreement.txt");
+const WANTED_VERSION = process.env.PW_ALGO_VERSION || "";
+function notebookAgreementPath(version) {
+  const versioned = path.join(PW_MEASUREMENTS, `notebook_agreement_v${version}.txt`);
+  if (fs.existsSync(versioned)) return versioned;
+  return version === "1.0" ? path.join(PW_MEASUREMENTS, "notebook_agreement.txt") : null;
+}
 const ALGO_DIR = path.join(ROOT, "algo");
 const VERSIONS = path.join(ALGO_DIR, "peakwise_versions.json");
 const OUT = path.join(ROOT, "RELEASE_CHECK_PEAKWISE.md");
@@ -67,9 +74,15 @@ function listLabFiles() {
   return files;
 }
 
-function readBaseline() {
+function baselinePath(version) {
+  if (process.env.PW_BASELINE) return path.resolve(process.env.PW_BASELINE);
+  const name = version === "1.0" ? "baseline_cpython.jsonl" : `baseline_cpython_v${version}.jsonl`;
+  return path.join(PW_MEASUREMENTS, name);
+}
+
+function readBaseline(file) {
   const map = new Map();
-  const text = fs.readFileSync(BASELINE, "utf8");
+  const text = fs.readFileSync(file, "utf8");
   for (const line of text.split("\n")) {
     if (!line.trim()) continue;
     const item = JSON.parse(line);
@@ -179,6 +192,7 @@ function writeReleaseCheck(data) {
   L.push(`- pyodide: ${data.pyodide_version}`);
   L.push(`- python (wasm): ${data.python_wasm}, numpy ${data.numpy}, scipy ${data.scipy}, pandas ${data.pandas}`);
   L.push(`- python (cpython baseline): ${data.python_host}`);
+  L.push(`- cpython baseline file: ${data.baseline_file}`);
   L.push(`- algo ${data.algo_version}, file sha256 ${data.algo_sha256}`);
   L.push(`- notebook cell sha256 ${data.cell_sha256}`);
   L.push(`- files on disk: ${data.n_files}, baseline records: ${data.n_baseline}`);
@@ -258,11 +272,15 @@ function writeReleaseCheck(data) {
 
 async function main() {
   const t0 = nowS();
-  if (!fs.existsSync(BASELINE)) throw new Error("missing baseline " + BASELINE);
-  const files = listLabFiles();
-  const baseline = readBaseline();
   const manifest = JSON.parse(fs.readFileSync(VERSIONS, "utf8"));
-  const entry = manifest.find((e) => e.default) || manifest[0];
+  const entry = WANTED_VERSION
+    ? manifest.find((e) => e.version === WANTED_VERSION)
+    : manifest.find((e) => e.default) || manifest[0];
+  if (!entry) throw new Error("no algorithm version " + WANTED_VERSION + " in " + VERSIONS);
+  const baselineFile = baselinePath(entry.version);
+  if (!fs.existsSync(baselineFile)) throw new Error("missing baseline " + baselineFile);
+  const files = listLabFiles();
+  const baseline = readBaseline(baselineFile);
   const algoPath = path.join(ALGO_DIR, entry.file);
   const algoSha = await sha256File(algoPath);
   if (algoSha !== entry.sha256) {
@@ -379,9 +397,10 @@ dump_analyze(_pw_name, content, with_curve=False)
   const tNeg = nowS() - t;
   log(`negative diffFiles=${negDiffFiles}/${negN} in ${tNeg.toFixed(1)}s`);
 
-  const notebookLines = fs.existsSync(NOTEBOOK_AGREEMENT)
-    ? fs.readFileSync(NOTEBOOK_AGREEMENT, "utf8").trim().split("\n")
-    : ["not run"];
+  const agreementFile = notebookAgreementPath(entry.version);
+  const notebookLines = agreementFile && fs.existsSync(agreementFile)
+    ? fs.readFileSync(agreementFile, "utf8").trim().split("\n")
+    : [`not measured for version ${entry.version}`];
 
   const strictPass = hardDiffs.length === 0 && tieDiffs.length === 0;
   const gatePass =
@@ -397,6 +416,7 @@ dump_analyze(_pw_name, content, with_curve=False)
     pyodide_version: pyodide.version,
     python_wasm: env.python,
     python_host: process.env.PW_HOST_PYTHON || "see BUILD_REPORT.md",
+    baseline_file: path.basename(baselineFile),
     numpy: env.numpy,
     scipy: env.scipy,
     pandas: env.pandas,

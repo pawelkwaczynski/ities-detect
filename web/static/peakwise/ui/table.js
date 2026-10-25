@@ -8,30 +8,40 @@ import {
   statusWord,
   warningText,
 } from "./format.js";
+import { withSymbol } from "./symbols.js";
 
+// A column with `symbol` is headed by the quantity's symbol: "{q} / unit" for a number,
+// "{q} method" (in the dictionary's word order) for the method of a current.
 const COLUMNS = [
   { key: "electrode", label: "table.electrode", get: (f) => f.electrode, type: "text" },
   { key: "name", label: "table.file", get: (f) => f.name, type: "text" },
   { key: "status", label: "table.status", get: (f) => displayResult(f)?.status || "", type: "status" },
-  { key: "Ip_a", label: "table.Ip_a", get: (f) => displayResult(f)?.Ip_a_uA, type: "num", digits: 3 },
-  { key: "Ip_c", label: "table.Ip_c", get: (f) => displayResult(f)?.Ip_c_uA, type: "num", digits: 3 },
-  { key: "Ep_a", label: "table.Ep_a", get: (f) => displayResult(f)?.Ep_a_V, type: "num", digits: 4 },
-  { key: "Ep_c", label: "table.Ep_c", get: (f) => displayResult(f)?.Ep_c_V, type: "num", digits: 4 },
-  { key: "dEp", label: "table.dEp", get: (f) => displayResult(f)?.dEp_mV, type: "num", digits: 1 },
+  { key: "Ip_a", symbol: "Ip_a", unit: "µA", get: (f) => displayResult(f)?.Ip_a_uA, type: "num", digits: 3 },
+  { key: "Ip_c", symbol: "Ip_c", unit: "µA", get: (f) => displayResult(f)?.Ip_c_uA, type: "num", digits: 3 },
+  { key: "Ep_a", symbol: "Ep_a", unit: "V", get: (f) => displayResult(f)?.Ep_a_V, type: "num", digits: 4 },
+  { key: "Ep_c", symbol: "Ep_c", unit: "V", get: (f) => displayResult(f)?.Ep_c_V, type: "num", digits: 4 },
+  { key: "dEp", symbol: "dEp", unit: "mV", get: (f) => displayResult(f)?.dEp_mV, type: "num", digits: 1 },
   {
     key: "methodA",
-    label: "table.methodA",
+    label: "table.methodOf",
+    symbol: "Ip_a",
     get: (f) => displayResult(f)?.anodic?.method_code || "",
     type: "method",
   },
   {
     key: "methodC",
-    label: "table.methodC",
+    label: "table.methodOf",
+    symbol: "Ip_c",
     get: (f) => displayResult(f)?.cathodic?.method_code || "",
     type: "method",
   },
   { key: "version", label: "table.version", get: (f) => f.algoVersion || "", type: "text" },
 ];
+
+function headLabel(c) {
+  if (!c.symbol) return document.createTextNode(t(c.label));
+  return withSymbol(c.label ? t(c.label) : "{q} / " + c.unit, c.symbol);
+}
 
 function cellText(col, file) {
   const value = col.get(file);
@@ -85,7 +95,8 @@ export function renderTable(host, { files, filter, sortKey, sortDir, onSort, onS
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "th-sort";
-    btn.textContent = t(c.label) + (sortKey === c.key ? (sortDir > 0 ? " ↑" : " ↓") : "");
+    btn.append(headLabel(c));
+    if (sortKey === c.key) btn.append(sortDir > 0 ? " ↑" : " ↓");
     btn.addEventListener("click", () => onSort(c.key));
     th.appendChild(btn);
     if (sortKey === c.key) th.setAttribute("aria-sort", sortDir > 0 ? "ascending" : "descending");

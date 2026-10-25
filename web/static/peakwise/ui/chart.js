@@ -1,6 +1,8 @@
 import uPlot from "/vendor/uplot/uPlot.esm.js";
+import { drawRuns, runsWidth } from "/shared/typeset.js";
 import { t } from "./i18n.js";
 import { fmtNum } from "./format.js";
+import { quantityRuns } from "./symbols.js";
 
 // Colours follow the notebook figure: red marks the anodic peak, blue the cathodic one.
 const ANODIC = "#DC2626";
@@ -169,13 +171,28 @@ export class CvChart {
       }
     };
 
-    const label = (e, i, textValue, color, dy) => {
+    // E_pa = 0.312 V as the papers set it: E in italic, the subscript, the operator and
+    // the unit upright (same runs as δΔE on the ITIES Detect chart). uPlot draws on an
+    // unscaled canvas, so the text follows the pixel ratio to keep its CSS size.
+    const ratio = uPlot.pxRatio || window.devicePixelRatio || 1;
+    const label = (e, i, runs, color, dy) => {
       if (e == null || i == null) return;
       const px = u.valToPos(e, "x", true);
       const py = u.valToPos(i, "y", true);
       ctx.fillStyle = color;
-      ctx.font = "600 12px var(--font)";
-      ctx.fillText(textValue, px + 8, py + dy);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      const size = 12 * ratio;
+      const width = runsWidth(ctx, runs, size);
+      const left = u.bbox.left + 3 * ratio;
+      const right = u.bbox.left + u.bbox.width - 3 * ratio;
+      const top = u.bbox.top + size / 2 + 3 * ratio;
+      const bottom = u.bbox.top + u.bbox.height - size / 2 - 3 * ratio;
+      const x = px + 8 * ratio + width <= right
+        ? px + 8 * ratio
+        : Math.max(left, px - 8 * ratio - width);
+      const y = Math.max(top, Math.min(py + dy * ratio, bottom));
+      drawRuns(ctx, runs, Math.max(left, Math.min(x, right - width)), y, size);
     };
 
     // The Ip the app reports is the vertical distance from the baseline to the reading, so
@@ -193,9 +210,9 @@ export class CvChart {
       ctx.setLineDash([]);
     };
 
-    for (const [branch, color] of [
-      [r.anodic, ANODIC],
-      [r.cathodic, CATHODIC],
+    for (const [branch, color, symbol] of [
+      [r.anodic, ANODIC, "Ep_a"],
+      [r.cathodic, CATHODIC, "Ep_c"],
     ]) {
       if (!branch) continue;
       line(branch.baseline_curve, color, [5, 4]);
@@ -204,9 +221,9 @@ export class CvChart {
       label(
         branch.Ep_V,
         branch.Ip_raw_nA,
-        `${fmtNum(branch.Ep_V, 3)} V`,
+        [...quantityRuns(symbol), { text: ` = ${fmtNum(branch.Ep_V, 3)} V` }],
         color,
-        branch === r.anodic ? -9 : 16
+        branch === r.anodic ? -13 : 13
       );
       if (this.showTangents && branch.E_tangents_V != null) {
         vline(branch.E_tangents_V, color, [2, 3]);

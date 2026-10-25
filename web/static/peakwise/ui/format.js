@@ -58,6 +58,15 @@ export function baselineWindowLabel(window) {
   });
 }
 
+// The rule and its window. A branch without a baseline (algorithm 1.1) has neither a
+// window nor anchor points, so only the rule is named.
+export function baselineText(branch) {
+  const rule = baselineLabel(branch.baseline_rule_code);
+  if (branch.baseline_rule_code === "no_baseline") return rule;
+  if (branch.baseline_rule_code === "two_anchor_fallback" && !branch.baseline_window) return rule;
+  return rule + ", " + baselineWindowLabel(branch.baseline_window);
+}
+
 export function cycleLabel(cycle) {
   if (!cycle) return t("metric.none");
   const key = "cycle." + cycle;

@@ -6,15 +6,16 @@ methods, warnings, CSV row and the 50 sampled baseline points per branch).
 
 ## Environment
 
-- date: 2026-09-17T21:39:52.448Z
+- date: 2026-10-25T17:32:50.233Z
 - pyodide: 314.0.7
 - python (wasm): 3.14.2, numpy 2.4.6, scipy 1.18.0, pandas 3.0.2
-- python (cpython baseline): see BUILD_REPORT.md
-- algo 1.0, file sha256 2d021d6e1ded7b9822acb984c25cb8ca41242fe9ed937069d49378adf9b47eed
-- notebook cell sha256 9c0340708dcb31efac22c39a8fb5ccfb6ad9e73dbc37d66dc35de81ca48cb954
+- python (cpython baseline): 3.12.13, numpy 2.5.4, scipy 1.18.1, pandas 3.1.0
+- cpython baseline file: baseline_cpython_v1.1.jsonl
+- algo 1.1, file sha256 66e25f0a8446f6dfcb8e900ef92e265f89aee2ece9f36b2121c0f519fa0a2436
+- notebook cell sha256 047f739744fc44ff1a0405bbd96b5e3dd8e09573f2744d96b89d20939e4481a3
 - files on disk: 188, baseline records: 188
-- load pyodide 0.83 s, packages 0.87 s, analyze 0.96 s
-- rss at end: 817 MB
+- load pyodide 1.97 s, packages 2.01 s, analyze 2.16 s
+- rss at end: 812.7 MB
 
 ## Gate (abs tol 1e-9, rel tol 1e-12)
 
@@ -38,19 +39,13 @@ Cause, measured with tools/diagnose_file.mjs: the parsed E and I arrays are byte
 
 - files re-analysed: 188
 - files that now differ from the baseline: **156**
-- wall: 0.85 s
+- wall: 2.13 s
 PASS: the gate reports differences when the Ip definition is changed, so it can fail.
 
 ## Notebook agreement
 
-- cv_wyniki_zbiorcze.csv: 7 rows, 4 matched by name, 3 matched by value under another name, 0 unmatched
-- `BH FDM 1Ś BA 0(1).5mM FeMeOH`: identical on all 20 columns
-- `BH FDM 1Ś BA 0(2).5mM FeMeOH`: identical on all 20 columns
-- `BH FDM 1Ś BA 0(3).5mM FeMeOH`: identical on all 20 columns
-- `BH FDM 1Ś BA 0.5mM FeMeOH`: identical on all 20 columns
-- `WE_1mm_A`: file name absent from the lab tree, all 20 columns identical to `SPE iterations/WE/1mm/1 mm A/1 set 1 mm 1mM FeMeOH ba (0).txt`
-- `WE_3mm (original version)_A`: file name absent from the lab tree, all 20 columns identical to `SPE iterations/WE/3mm (original version)/3 mm A/1 set 3mm 1 mM FeMeOH ba`
-- `WE_4mm_A`: file name absent from the lab tree, all 20 columns identical to `SPE iterations/WE/4mm/4 mm A/1 set 4mm 1 mM FeMeOH ba`
+- Notebook cells 1 (SETUP) and 10 (CSV export) on all 184 files of `SPE iterations` (PNG files skipped): 184 rows, 26 columns
+- PeakWise 1.1 `result_row(analyze(...))` identical on all 26 columns in 184 of 184 rows
 
 ## Verdict
 

@@ -1,9 +1,23 @@
 // App version and its changelog. Kept in its own module so the version history page does
 // not have to import the whole application (and with it Pyodide and the chart library).
 
-export const APP_VERSION = "1.1.0";
+export const APP_VERSION = "1.2.0";
 
 export const APP_CHANGELOG = [
+  {
+    version: "1.2.0",
+    date: "2026-10-25",
+    en: [
+      "peak potentials, peak currents, their separation and ratio are written as symbols, the quantity in italic and the subscript upright, with a tooltip on each tile; the chart labels both peaks the same way and is drawn again after a theme switch",
+      "algorithm 1.1 is the default: it gives the same numbers as 1.0 on the 184 lab files; it reads unusual headers and empty cells more cautiously and rejects a column whose name ends in a prefixed unit with uppercase A or V (e.g. µA, mV)",
+      "changing the algorithm version starts a new analysis of the files whose bytes are in the session; each result keeps the version that calculated it",
+    ],
+    pl: [
+      "potencjały i prądy pików, ich rozdział i stosunek są zapisane symbolami, wielkość kursywą, indeks prosto, z dymkiem na każdym kafelku; wykres podpisuje oba piki tak samo i rysuje się od nowa po zmianie motywu",
+      "domyślny jest algorytm 1.1: na 184 plikach laboratorium daje liczby jak 1.0; nietypowe nagłówki i puste komórki czyta ostrożniej, a kolumnę z jednostką z przedrostkiem na końcu nazwy, z wielką literą A lub V (np. µA, mV), odrzuca",
+      "zmiana wersji algorytmu uruchamia ponowne przeliczenie plików, których bajty są w sesji; każdy wynik zachowuje wersję, która go policzyła",
+    ],
+  },
   {
     version: "1.1.0",
     date: "2026-09-17",

@@ -1,7 +1,6 @@
 import { t } from "./i18n.js";
 import {
-  baselineLabel,
-  baselineWindowLabel,
+  baselineText,
   cycleLabel,
   fmtNum,
   fmtUnit,
@@ -14,6 +13,7 @@ import {
   statusWord,
   warningText,
 } from "./format.js";
+import { quantitySymbol } from "./symbols.js";
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -22,9 +22,16 @@ function el(tag, className, text) {
   return node;
 }
 
-function metric(label, value, note) {
+// The symbol is on screen, the plain-language meaning in its tooltip, as in the Peaks
+// panel of ITIES Detect.
+function metric(symbol, value, note) {
   const box = el("div", "metric");
-  box.append(el("div", "metric-label", label), el("div", "metric-value tabular", value));
+  const label = el("div", "metric-label");
+  label.appendChild(quantitySymbol(symbol));
+  label.dataset.tooltipText = t("symbol." + symbol);
+  // Focusable, so the explanation is reachable from the keyboard, not only by pointer.
+  label.tabIndex = 0;
+  box.append(label, el("div", "metric-value tabular", value));
   if (note) box.appendChild(el("div", "metric-note", note));
   return box;
 }
@@ -50,12 +57,12 @@ export function renderResultCard(host, { file, result }) {
   const a = result?.anodic;
   const c = result?.cathodic;
   grid.append(
-    metric(t("metric.Ip_a"), fmtUnit(a?.Ip_uA, 3, "µA"), a ? methodLabel(a.method_code) : undefined),
-    metric(t("metric.Ip_c"), fmtUnit(c?.Ip_uA, 3, "µA"), c ? methodLabel(c.method_code) : undefined),
-    metric(t("metric.Ep_a"), fmtUnit(a?.Ep_V, 4, "V"), a ? shapeLabel(a.shape) : undefined),
-    metric(t("metric.Ep_c"), fmtUnit(c?.Ep_V, 4, "V"), c ? shapeLabel(c.shape) : undefined),
-    metric(t("metric.dEp"), fmtUnit(result?.dEp_mV, 1, "mV")),
-    metric(t("metric.ratio"), fmtNum(result?.Ip_ratio, 3))
+    metric("Ip_a", fmtUnit(a?.Ip_uA, 3, "µA"), a ? methodLabel(a.method_code) : undefined),
+    metric("Ip_c", fmtUnit(c?.Ip_uA, 3, "µA"), c ? methodLabel(c.method_code) : undefined),
+    metric("Ep_a", fmtUnit(a?.Ep_V, 4, "V"), a ? shapeLabel(a.shape) : undefined),
+    metric("Ep_c", fmtUnit(c?.Ep_V, 4, "V"), c ? shapeLabel(c.shape) : undefined),
+    metric("dEp", fmtUnit(result?.dEp_mV, 1, "mV")),
+    metric("ratio", fmtNum(result?.Ip_ratio, 3))
   );
   card.append(grid);
 
@@ -72,14 +79,7 @@ export function renderResultCard(host, { file, result }) {
       row.append(el("span", "read-branch", t(key)));
       const body = el("div", "read-body");
       body.append(el("p", null, methodLabel(branch.method_code)));
-      body.append(
-        el(
-          "p",
-          "muted",
-          `${t("read.baseline")}: ${baselineLabel(branch.baseline_rule_code)}, ` +
-            baselineWindowLabel(branch.baseline_window)
-        )
-      );
+      body.append(el("p", "muted", `${t("read.baseline")}: ${baselineText(branch)}`));
       row.append(body);
       rows.append(row);
     }
@@ -107,7 +107,7 @@ export function renderResultCard(host, { file, result }) {
   host.append(card);
 }
 
-export function renderDetails(host, { file, result, config }) {
+export function renderDetails(host, { file, result, config, configVersion }) {
   host.innerHTML = "";
   if (!result) return;
   const box = el("details", "card details-card");
@@ -165,7 +165,7 @@ export function renderDetails(host, { file, result, config }) {
   kv(list, t("details.cycles"), result.n_cycles);
   kv(list, t("read.cycle"), cycleLabel(result.cycle_used));
   kv(list, t("details.fileSha"), file.sha256);
-  kv(list, t("details.algo"), result.algo_version);
+  kv(list, t("details.algo"), file.algoVersion || result.algo_version);
   kv(list, t("details.algoSha"), file.algoSha);
   kv(list, t("details.cellSha"), result.algo_cell_sha256);
   kv(list, t("details.analysedAt"), formatTime(file.analysedAt));
@@ -173,7 +173,7 @@ export function renderDetails(host, { file, result, config }) {
 
   if (config) {
     const cfg = el("details", "config-block");
-    cfg.append(el("summary", null, t("report.thresholds")));
+    cfg.append(el("summary", null, t("report.currentThresholdsShort", { v: configVersion })));
     const clist = el("dl", "kv");
     for (const [name, value] of Object.entries(config)) {
       if (name === "CSV_COLUMNS") continue;

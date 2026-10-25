@@ -946,6 +946,11 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
 }
 
 .metric-label { font-size: 11px; color: var(--text-secondary); }
+/* Symbols of quantities (ui/symbols.js) are MathML in the system math font. On a tile the
+   symbol is the label, so it is set larger than the 11 px caption it replaces. */
+.qty-symbol { font-size: 1.1em; color: inherit; }
+.metric-label .qty-symbol { font-size: 15px; color: var(--text); }
+.metric-label[data-tooltip-text] { cursor: help; width: fit-content; }
 .metric-value {
   font-size: 20px;
   font-weight: 600;
@@ -1100,6 +1105,8 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
   text-align: left;
 }
 .warn-dot { min-width: 32px; color: var(--verdict-uncertain); font-weight: 600; }
+/* A symbol and its unit stay on one line: "Ipc / µA", not "Ipc /" over "µA". */
+.th-sort .qty-label { white-space: nowrap; }
 
 /* Shell ------------------------------------------------------------------ */
 

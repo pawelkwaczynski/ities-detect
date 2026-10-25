@@ -41,6 +41,7 @@
     import { mountBackLink } from "/shared/backlink.js";
     import { APP_VERSION, APP_CHANGELOG } from "/peakwise/ui/app_version.js";
     import { fmtNum, shaShort } from "/peakwise/ui/format.js";
+    import { quantitySymbol } from "/peakwise/ui/symbols.js";
 
     const THEME_KEY = "ities-theme";
     let manifest = [];
@@ -56,14 +57,16 @@
       const wrap = el("div");
       if (!m) return wrap;
       wrap.appendChild(el("div", null, t("versions.against") + " " + m.reference));
-      for (const [label, k] of [["Ip a", "Ip_a"], ["Ip c", "Ip_c"]]) {
+      for (const k of ["Ip_a", "Ip_c"]) {
         const v = m[k];
         if (!v) continue;
-        wrap.appendChild(
-          el("div", "tabular",
-            `${label}: ${t("versions.meanError")} ${fmtNum(v.mean_error_pct, 1)} %, ` +
-            `n = ${v.n_computed} / ${v.n_reference}`)
+        const line = el("div", "tabular");
+        line.append(
+          quantitySymbol(k),
+          `: ${t("versions.meanError")} ${fmtNum(v.mean_error_pct, 1)} %, ` +
+            `n = ${v.n_computed} / ${v.n_reference}`
         );
+        wrap.appendChild(line);
       }
       const note = getLang() === "pl" ? (m.note_pl || m.note) : m.note;
       if (note) wrap.appendChild(el("div", "muted", note));
