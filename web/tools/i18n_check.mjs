@@ -66,6 +66,8 @@ const DYNAMIC = {
     "app.changelog.1_2_0",
     "app.changelog.1_3_0",
     "app.changelog.1_4_0",
+    "app.changelog.1_4_1",
+    "app.changelog.1_4_2",
   ],
   "login.<server error>": ["login.invalid", "login.rateLimited"],
   // shared/partners.js reads the key out of its table, so the literal call is invisible

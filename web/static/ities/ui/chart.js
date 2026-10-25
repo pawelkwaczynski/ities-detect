@@ -155,9 +155,21 @@ function roundRect(ctx, x, y, w, h, r) {
 
 // A number or short caption on a filled plate, the canvas answer to the notebook's
 // white path-effect stroke: readable over the curve in both themes.
+// δΔE as the manuscript sets it: δ and the quantity E in italic, the operator Δ upright.
+const DELTA_DELTA_E = [{ text: "δ", italic: true }, { text: "Δ" }, { text: "E", italic: true }];
+
+// A plate's text is a string or a list of runs, [{ text, italic }], so a symbol can
+// mix italic and upright letters on the canvas.
 function plate(ctx, text, cx, cy, color, colors, ratio) {
-  ctx.font = `700 ${Math.round(12 * ratio)}px ${FONT_STACK}`;
-  const w = ctx.measureText(text).width + 9 * ratio;
+  const runs = typeof text === "string" ? [{ text }] : text;
+  const size = Math.round(12 * ratio);
+  const fontOf = (run) => `${run.italic ? "italic " : ""}700 ${size}px ${FONT_STACK}`;
+  const widths = runs.map((run) => {
+    ctx.font = fontOf(run);
+    return ctx.measureText(run.text).width;
+  });
+  const textWidth = widths.reduce((sum, w) => sum + w, 0);
+  const w = textWidth + 9 * ratio;
   const h = 17 * ratio;
   roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 5 * ratio);
   ctx.fillStyle = colors.surface;
@@ -168,9 +180,14 @@ function plate(ctx, text, cx, cy, color, colors, ratio) {
   ctx.strokeStyle = color;
   ctx.stroke();
   ctx.fillStyle = color;
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  ctx.fillText(text, cx, cy + 0.5 * ratio);
+  let x = cx - textWidth / 2;
+  runs.forEach((run, i) => {
+    ctx.font = fontOf(run);
+    ctx.fillText(run.text, x, cy + 0.5 * ratio);
+    x += widths[i];
+  });
 }
 
 export class CvChart {
@@ -449,7 +466,7 @@ export class CvChart {
         ctx.stroke();
         plate(
           ctx,
-          t("chart.delta", { value: fmtNum(result.delta_Es, 3) }),
+          [...DELTA_DELTA_E, { text: " = " + fmtNum(result.delta_Es, 3) + " V" }],
           (x5 + x6) / 2,
           y - 13 * ratio,
           colors.text,

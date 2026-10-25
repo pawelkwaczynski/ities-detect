@@ -16,9 +16,11 @@
     <h1 data-i18n="login.title">{{ copy["login.title"] }}</h1>
     <form method="post" action="/login?lang={{ lang }}" novalidate>
       <input type="hidden" name="next" value="{{ next_path }}">
-      <label>
+      <label class="login-user">
         <span data-i18n="login.username">{{ copy["login.username"] }}</span>
-        <input name="username" type="text" autocomplete="username" required autofocus>
+        <input id="login-username" name="username" type="text" autocomplete="username" required autofocus
+               role="combobox" aria-expanded="false" aria-controls="login-known" aria-autocomplete="list">
+        <ul class="login-known" id="login-known" role="listbox" hidden></ul>
       </label>
       <label>
         <span data-i18n="login.password">{{ copy["login.password"] }}</span>
@@ -27,11 +29,90 @@
       <button class="primary" type="submit" data-i18n="login.submit">{{ copy["login.submit"] }}</button>
       {% if error_key %}
       <p class="login-error" role="alert" data-i18n="{{ error_key }}">{{ copy[error_key] }}</p>
+      {% elif changed %}
+      <p class="login-changed" role="status">{{ copy["login.changed"] }}</p>
       {% else %}
       <p class="login-error" aria-live="polite"></p>
       {% endif %}
     </form>
     <p class="login-brand"><span data-i18n="login.by">{{ copy["login.by"] }}</span><img src="/assets/partners/focusframe-logo.svg" alt="Focus Frame" height="16"></p>
   </main>
+  <script>
+    // Logins used in THIS browser, remembered locally. The server never publishes the
+    // account list: a public page that lists valid logins is a gift to whoever finds it.
+    (function () {
+      var KEY = "analizatory-logins";
+      var input = document.getElementById("login-username");
+      var list = document.getElementById("login-known");
+      var form = input && input.form;
+      if (!input || !list || !form) return;
+      var remove = {{ copy["login.forget"] | tojson }};
+      function read() {
+        try {
+          var raw = JSON.parse(localStorage.getItem(KEY) || "[]");
+          return Array.isArray(raw) ? raw.filter(function (x) { return typeof x === "string" && x; }) : [];
+        } catch (e) { return []; }
+      }
+      function write(items) {
+        try { localStorage.setItem(KEY, JSON.stringify(items.slice(0, 6))); } catch (e) {}
+      }
+      function close() {
+        list.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+      }
+      function open() {
+        var items = read();
+        list.textContent = "";
+        if (!items.length) return close();
+        items.forEach(function (name) {
+          var li = document.createElement("li");
+          var pick = document.createElement("button");
+          pick.type = "button";
+          pick.className = "login-known-name";
+          pick.textContent = name;
+          pick.addEventListener("mousedown", function (ev) { ev.preventDefault(); });
+          pick.addEventListener("click", function () {
+            input.value = name;
+            close();
+            form.querySelector('input[type="password"]').focus();
+          });
+          var drop = document.createElement("button");
+          drop.type = "button";
+          drop.className = "login-known-drop";
+          drop.title = remove;
+          drop.setAttribute("aria-label", remove + ": " + name);
+          drop.textContent = "\u00d7";
+          drop.addEventListener("mousedown", function (ev) { ev.preventDefault(); });
+          drop.addEventListener("click", function () {
+            write(read().filter(function (x) { return x !== name; }));
+            open();
+          });
+          li.append(pick, drop);
+          list.appendChild(li);
+        });
+        list.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+      }
+      input.addEventListener("focus", open);
+      input.addEventListener("click", open);
+      input.addEventListener("input", close);
+      input.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") close();
+        if (ev.key === "ArrowDown" && !list.hidden) {
+          ev.preventDefault();
+          var first = list.querySelector(".login-known-name");
+          if (first) first.focus();
+        }
+      });
+      document.addEventListener("click", function (ev) {
+        if (!list.contains(ev.target) && ev.target !== input) close();
+      });
+      form.addEventListener("submit", function () {
+        var name = input.value.trim();
+        if (!name) return;
+        write([name].concat(read().filter(function (x) { return x !== name; })));
+      });
+    })();
+  </script>
 </body>
 </html>

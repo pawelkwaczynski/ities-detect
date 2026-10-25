@@ -12,6 +12,7 @@ import {
 } from "./format.js";
 import { deviationScale } from "./verdict.js";
 import { CvChart, annotationLegend, pointE, pointI, seriesLegend } from "./chart.js";
+import { peakSymbol } from "./symbols.js";
 
 // The result screen: who this file is, the four numbers that decide the verdict, the
 // curve at a size you can actually read, the peaks behind the verdict, and the full
@@ -357,13 +358,14 @@ function peaksPanel(result, opts) {
   const aside = el("aside", "card peaks-card");
   aside.appendChild(el("h2", "panel-title", t("peaks.title")));
 
+  // The symbol is on screen, the plain-language meaning in its tooltip.
   const rows = [
     { key: "1", meaning: t("peaks.meaning.1"), e: pointE(result, "1", opts.calibrated), i: pointI(result, "1"), tone: "tpra", editable: true },
     { key: "2", meaning: t("peaks.meaning.2"), e: pointE(result, "2", opts.calibrated), i: pointI(result, "2"), tone: "tpra", editable: true },
     { key: "3", meaning: t("peaks.meaning.3"), e: pointE(result, "3", opts.calibrated), i: pointI(result, "3"), tone: "analyte", editable: true },
     { key: "4", meaning: t("peaks.meaning.4"), e: pointE(result, "4", opts.calibrated), i: pointI(result, "4"), tone: "analyte", editable: true },
-    { key: "E5", meaning: t("peaks.meaning.5"), e: pairMidpoint(result, "1", "2", opts.calibrated), i: null, tone: "tpra" },
-    { key: "E6", meaning: t("peaks.meaning.6"), e: pairMidpoint(result, "3", "4", opts.calibrated), i: null, tone: "analyte" },
+    { key: "E5", meaning: t(opts.calibrated ? "peaks.meaning.5" : "peaks.meaning.5raw"), e: pairMidpoint(result, "1", "2", opts.calibrated), i: null, tone: "tpra" },
+    { key: "E6", meaning: t(opts.calibrated ? "peaks.meaning.6" : "peaks.meaning.6raw"), e: pairMidpoint(result, "3", "4", opts.calibrated), i: null, tone: "analyte" },
   ];
   const table = el("table", "peaks-table tabular");
   const thead = el("thead");
@@ -382,9 +384,14 @@ function peaksPanel(result, opts) {
     const shown = row.editable && opts.draft?.[row.key] != null ? opts.draft[row.key] : row.e;
     if (row.editable && opts.expert) eCell.appendChild(peakInput(row.key, shown, opts));
     else eCell.textContent = shown == null ? "—" : fmtNum(shown, 3);
+    const symbol = el("td", "peak-type");
+    symbol.appendChild(peakSymbol(row.key, opts.calibrated));
+    symbol.dataset.tooltipText = row.meaning;
+    // Focusable, so the explanation is reachable from the keyboard, not only by pointer.
+    symbol.tabIndex = 0;
     tr.append(
       first,
-      el("td", "peak-type", row.meaning),
+      symbol,
       eCell,
       el("td", null, row.i == null ? "—" : fmtNum(row.i, 1)),
       promCell(result, row, opts)
@@ -431,6 +438,11 @@ function peaksPanel(result, opts) {
 }
 
 // ---------------------------------------------------------------- folded sections
+
+// Measurement parameters and analysis history are off the result screen for now. The
+// code stays as it was: set this to true and both sections come back. File metadata
+// is always shown. Exports and the printed report are not affected.
+const SHOW_PARAMS_AND_HISTORY = false;
 
 function foldSection(titleKey, build, open) {
   const details = el("details", "card fold");
@@ -679,8 +691,10 @@ export function renderResult(host, opts) {
 
   if (opts.expertPanel) host.appendChild(opts.expertPanel);
 
-  host.appendChild(paramsSection(result, constants, opts.calibrated));
-  host.appendChild(historySection(file, result));
+  if (SHOW_PARAMS_AND_HISTORY) {
+    host.appendChild(paramsSection(result, constants, opts.calibrated));
+    host.appendChild(historySection(file, result));
+  }
   host.appendChild(metadataSection(file, result, algoVersion, algoSha));
 
   if (result.curve) {

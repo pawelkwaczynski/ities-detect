@@ -43,6 +43,22 @@ const EN = {
   "login.invalid": "Wrong login or password",
   "login.rateLimited": "Too many attempts. Try again in 60 seconds.",
   "login.by": "Built by",
+  "login.forget": "Remove from this browser",
+  "login.changed": "Password changed. Sign in again.",
+  "password.pageTitle": "Change password, CV Analysers",
+  "password.title": "Change password",
+  "password.who": "Signed in as {user}",
+  "password.current": "Current password",
+  "password.new": "New password",
+  "password.repeat": "Repeat new password",
+  "password.submit": "Save",
+  "password.back": "Back",
+  "password.hint": "At least 10 characters. Saving signs out the other sessions.",
+  "password.wrongCurrent": "The current password does not match",
+  "password.tooShort": "The new password needs at least 10 characters",
+  "password.mismatch": "The two new passwords are different",
+  "password.same": "The new password is the same as the current one",
+  "common.password": "Change password",
 
   "hub.pageTitle": "CV Analysers",
   "hub.title": "CV Analysers",
@@ -130,7 +146,7 @@ const EN = {
   "tip.expert": "Unlocks manual result correction: dragging points 1 to 4 on the chart, entering a potential in the Peaks panel, the Add analyte pair and Point to standard manually buttons, and the Analysis parameters section. Saving a correction requires a reason, and the automatic result remains beside the expert result.",
   "tip.redetect": "This file only. Moves the expert correction to the analysis history and computes the file again automatically. Use it when you want to return to the program result.",
   "tip.recompute": "The whole list. Computes every file again and shows the progress window. Use it after an algorithm version or analysis parameter change. A normal import starts analysis automatically.",
-  "tip.addAnalyte": "Point to the analyte minimum on the reverse scan, point 3, then the maximum on the forward scan, point 4. The program snaps to the nearest point on the branch and calculates ΔE_s from your indications.",
+  "tip.addAnalyte": "Point to the analyte minimum on the reverse scan, point 3, then the maximum on the forward scan, point 4. The program snaps to the nearest point on the branch and calculates δΔE from your indications.",
   "tip.addStandard": "Point to the standard minimum on the reverse scan, point 1, the standard maximum on the forward scan, point 2, then the analyte points 3 and 4. The program snaps every indication to the nearest point on its branch.",
   "tip.analysisParams": "The default values were validated on 16.09.2026. Every change applies only in this session and marks the results as outside validation.",
   "tip.clearSession": "Removes all files, results and folders from this browser session after confirmation.",
@@ -219,8 +235,8 @@ const EN = {
   "verdict.invalid.word": "FILE NOT RECOGNISED",
   "verdict.invalid.next": "The E/I columns were not recognised. The file was not modified.",
 
-  "verdict.justification": "ΔE_s = {value} V, {mv} mV from the {target} V reference",
-  "verdict.noDelta": "No ΔE_s for this result.",
+  "verdict.justification": "δΔE = {value} V, {mv} mV from the {target} V reference",
+  "verdict.noDelta": "No δΔE for this result.",
   "verdict.auto": "Automatic",
   "verdict.expertWho": "Expert ({operator}, {time})",
   "verdict.expertNoName": "Expert ({time})",
@@ -231,7 +247,7 @@ const EN = {
   "scale.warn": "review range ±{mv} mV",
   "scale.out": "out of range",
 
-  "chart.axisCal": "E / V (after TPrA calibration)",
+  "chart.axisCal": "E / V (after TPrA⁺ calibration)",
   "chart.axisRaw": "E / V (raw)",
   "chart.axisI": "I / µA",
   "chart.toggleCal": "E after calibration",
@@ -246,7 +262,6 @@ const EN = {
   "chart.legend.e5": "E5 (TPrA)",
   "chart.legend.e6": "E6 (analyte)",
   "chart.legend.baseline": "Analyte baseline (fit)",
-  "chart.delta": "ΔE_s = {value} V",
   "chart.aria": "Cyclic voltammetry chart for {name}, verdict {verdict}.",
 
   "details.summary": "Details",
@@ -280,7 +295,7 @@ const EN = {
   "table.file": "File",
   "table.quality": "Quality",
   "table.verdict": "Verdict",
-  "table.delta": "ΔE_s",
+  "table.delta": "δΔE",
   "table.err": "Deviation mV",
   "table.ip": "Analyte Ip",
   "table.version": "Version",
@@ -354,7 +369,7 @@ const EN = {
   "versions.note":
     "Version and SHA-256 come from algo/versions.json. Measured on 16.09.2026: 121 of 293 positive files detected, 0 of 147 negative files and 0 of 45 neutral files falsely detected.",
   "versions.diff":
-    "1.1 = 1.0 + diagnostics (LOD/LOQ from the active calibration, below_lod warning, pair selection diagnostics); identical verdicts, ΔE_s and Ip on 485 test files.",
+    "1.1 = 1.0 + diagnostics (LOD/LOQ from the active calibration, below_lod warning, pair selection diagnostics); identical verdicts, δΔE and Ip on 485 test files.",
   "versions.col.version": "Version",
   "versions.col.date": "Date",
   "versions.col.sha": "SHA-256",
@@ -416,7 +431,7 @@ const EN = {
 
   "peaks.title": "Peaks",
   "peaks.col.n": "#",
-  "peaks.col.meaning": "Meaning",
+  "peaks.col.meaning": "Symbol",
   "peaks.col.e": "E (V)",
   "peaks.col.i": "I (µA)",
   "peaks.col.type": "Type",
@@ -428,12 +443,14 @@ const EN = {
   "peaks.redetect": "Detect again",
   "peaks.edit": "Edit peaks",
   "peaks.editOff": "Stop editing",
-  "peaks.meaning.1": "TPrA minimum (standard−)",
-  "peaks.meaning.2": "TPrA maximum (standard+)",
-  "peaks.meaning.3": "analyte minimum",
-  "peaks.meaning.4": "analyte maximum",
-  "peaks.meaning.5": "TPrA, pair midpoint",
-  "peaks.meaning.6": "analyte, pair midpoint",
+  "peaks.meaning.1": "Negative peak potential of TPrA⁺ (point 1): the standard ion transfers back from the organic to the aqueous phase on the reverse scan.",
+  "peaks.meaning.2": "Positive peak potential of TPrA⁺ (point 2): the standard ion transfers from the aqueous to the organic phase on the forward scan.",
+  "peaks.meaning.3": "Negative peak potential of the analyte cation A⁺ (point 3): back transfer from the organic to the aqueous phase on the reverse scan.",
+  "peaks.meaning.4": "Positive peak potential of the analyte cation A⁺ (point 4): transfer from the aqueous to the organic phase on the forward scan.",
+  "peaks.meaning.5": "Formal Galvani potential difference of TPrA⁺ transfer (E5), the midpoint of points 1 and 2. Calibration shifts the axis so that E5 equals −0.091 V, the literature value for TPrA⁺ transfer at the water||1,2-DCE interface.",
+  "peaks.meaning.6": "Formal Galvani potential difference of A⁺ transfer (E6), the midpoint of points 3 and 4. The verdict is based on δΔE = E6 − E5, about 0.350 V for amphetamine.",
+  "peaks.meaning.5raw": "Half-wave potential of TPrA⁺ (E5), the midpoint of points 1 and 2, on the instrument scale before calibration.",
+  "peaks.meaning.6raw": "Half-wave potential of A⁺ (E6), the midpoint of points 3 and 4, on the instrument scale before calibration. δΔE = E6 − E5 does not depend on calibration.",
   "peaks.addAnalyte": "Add analyte pair",
   "peaks.addStandard": "Set standard manually",
 
@@ -445,7 +462,7 @@ const EN = {
 
   "params.thresholds": "Thresholds of this algorithm version",
   "params.tpraTarget": "TPrA standard target",
-  "params.amphTarget": "Amphetamine ΔE_s criterion",
+  "params.amphTarget": "Amphetamine δΔE criterion",
   "params.tolerance": "Detection / review tolerance",
   "params.prominence": "Peak prominence",
   "params.weak": "Weak peak candidates",
@@ -462,7 +479,7 @@ const EN = {
   "analysisParams.customState": "Custom for this session (outside validation)",
   "analysisParams.detected": "DETECTED tolerance",
   "analysisParams.review": "EXPERT REVIEW tolerance",
-  "analysisParams.target": "Amphetamine reference ΔE_s",
+  "analysisParams.target": "Amphetamine reference δΔE",
   "analysisParams.forward": "TPrA+ forward window",
   "analysisParams.reverse": "TPrA− reverse window",
   "analysisParams.from": "from",
@@ -510,12 +527,12 @@ const EN = {
   "analysisParams.errorDetectedRange": "The DETECTED tolerance has to be between 1 and 30 mV.",
   "analysisParams.errorReviewRange":
     "The EXPERT REVIEW tolerance has to be at least the DETECTED tolerance and at most 30 mV.",
-  "analysisParams.errorTargetRange": "The reference ΔE_s has to be between 0.300 and 0.400 V.",
+  "analysisParams.errorTargetRange": "The reference δΔE has to be between 0.300 and 0.400 V.",
   "analysisParams.errorWindowRange": "Window limits have to be between -1.0 and 1.0 V.",
   "analysisParams.errorWindowWidth": "A window has to be at least 0.05 V wide.",
 
   "params.bar":
-    "Custom parameters: tolerance {detected}/{review} mV, ΔE_s {target} V. Results outside the validation of 16.09.2026.",
+    "Custom parameters: tolerance {detected}/{review} mV, δΔE {target} V. Results outside the validation of 16.09.2026.",
   "params.barLabel": "Custom analysis parameters",
 
   "progress.abort": "Stop",
@@ -619,6 +636,10 @@ const EN = {
 
   "print.session": "Session: {name}",
 
+  "app.changelog.1_4_2":
+    "2026-10-25: the distance between the two pair midpoints is called δΔE, as in the manuscript (formerly ΔE_s). On the chart it is typeset like a formula, with δ and E in italic. CSV column names do not change.",
+  "app.changelog.1_4_1":
+    "2026-10-25: the Peaks panel shows points 1 to 4, E5 and E6 in the notation of the papers of the Electrochemistry@Soft Interfaces Team (University of Lodz): E⁺ and E⁻ are the positive and negative peak potentials of TPrA⁺ and of the analyte cation A⁺, and Δ_org^aq Φ′ is the formal Galvani potential difference of the ion transfer. Pointing at a symbol explains it in words. Measurement parameters and analysis history are hidden from the result screen for now; file metadata stays, and exports and the report are unchanged.",
   "app.changelog.1_2_0":
     "2026-09-16: result screen rebuilt: file header with metadata, four KPI cards, a large annotated chart with zoom and full screen, a peaks panel, a folder and sample tree with status dots, and collapsible parameters, history and metadata. PeakWise 1.0 added to the hub.",
   "app.changelog.1_4_0":
@@ -653,6 +674,22 @@ const PL = {
   "login.invalid": "Zły login albo hasło",
   "login.rateLimited": "Za dużo prób. Spróbuj ponownie za 60 sekund.",
   "login.by": "Wykonanie",
+  "login.forget": "Usuń z tej przeglądarki",
+  "login.changed": "Hasło zmienione. Zaloguj się ponownie.",
+  "password.pageTitle": "Zmiana hasła, Analizatory CV",
+  "password.title": "Zmiana hasła",
+  "password.who": "Zalogowano jako {user}",
+  "password.current": "Obecne hasło",
+  "password.new": "Nowe hasło",
+  "password.repeat": "Powtórz nowe hasło",
+  "password.submit": "Zapisz",
+  "password.back": "Wróć",
+  "password.hint": "Co najmniej 10 znaków. Zapis wylogowuje pozostałe sesje.",
+  "password.wrongCurrent": "Obecne hasło się nie zgadza",
+  "password.tooShort": "Nowe hasło musi mieć co najmniej 10 znaków",
+  "password.mismatch": "Nowe hasła różnią się od siebie",
+  "password.same": "Nowe hasło jest takie samo jak obecne",
+  "common.password": "Zmień hasło",
 
   "hub.pageTitle": "Analizatory CV",
   "hub.title": "Analizatory CV",
@@ -740,7 +777,7 @@ const PL = {
   "tip.expert": "Odblokowuje ręczną korektę wyniku: przeciąganie punktów 1 do 4 na wykresie, wpisywanie potencjału w panelu Piki, przyciski Dodaj parę analitu i Wskaż wzorzec ręcznie, sekcja Parametry analizy. Zapis korekty wymaga powodu, a wynik automatyczny zostaje obok wyniku eksperta.",
   "tip.redetect": "Tylko ten plik. Odkłada korektę eksperta do historii analizy i liczy plik od nowa automatycznie. Użyj, gdy chcesz wrócić do wyniku programu.",
   "tip.recompute": "Cała lista. Liczy wszystkie pliki od nowa i pokazuje okno postępu. Potrzebne po zmianie wersji algorytmu albo parametrów analizy; po zwykłym wgraniu plików analiza rusza sama.",
-  "tip.addAnalyte": "Wskaż na wykresie minimum analitu na skanie wstecz, punkt 3, potem maksimum na skanie w przód, punkt 4. Program przyciąga do najbliższego punktu gałęzi i liczy ΔE_s z Twoich wskazań.",
+  "tip.addAnalyte": "Wskaż na wykresie minimum analitu na skanie wstecz, punkt 3, potem maksimum na skanie w przód, punkt 4. Program przyciąga do najbliższego punktu gałęzi i liczy δΔE z Twoich wskazań.",
   "tip.addStandard": "Wskaż na wykresie minimum wzorca na skanie wstecz, punkt 1, maksimum wzorca na skanie w przód, punkt 2, a potem punkty analitu 3 i 4. Program przyciąga każde wskazanie do najbliższego punktu właściwej gałęzi.",
   "tip.analysisParams": "Wartości domyślne są zwalidowane 16.09.2026. Każda zmiana działa tylko w tej sesji i oznacza wyniki jako poza walidacją.",
   "tip.clearSession": "Po potwierdzeniu usuwa wszystkie pliki, wyniki i foldery z tej sesji przeglądarki.",
@@ -830,8 +867,8 @@ const PL = {
   "verdict.invalid.word": "NIE ROZPOZNANO PLIKU",
   "verdict.invalid.next": "Nie rozpoznano kolumn E/I. Plik nie został zmieniony.",
 
-  "verdict.justification": "ΔE_s = {value} V, {mv} mV od wzorca {target} V",
-  "verdict.noDelta": "Brak ΔE_s dla tego wyniku.",
+  "verdict.justification": "δΔE = {value} V, {mv} mV od wzorca {target} V",
+  "verdict.noDelta": "Brak δΔE dla tego wyniku.",
   "verdict.auto": "Automatycznie",
   "verdict.expertWho": "Ekspert ({operator}, {time})",
   "verdict.expertNoName": "Ekspert ({time})",
@@ -842,7 +879,7 @@ const PL = {
   "scale.warn": "zakres do oceny ±{mv} mV",
   "scale.out": "poza zakresem",
 
-  "chart.axisCal": "E / V (po kalibracji TPrA)",
+  "chart.axisCal": "E / V (po kalibracji TPrA⁺)",
   "chart.axisRaw": "E / V (surowe)",
   "chart.axisI": "I / µA",
   "chart.toggleCal": "E po kalibracji",
@@ -857,7 +894,6 @@ const PL = {
   "chart.legend.e5": "E5 (TPrA)",
   "chart.legend.e6": "E6 (analit)",
   "chart.legend.baseline": "Baseline analitu (fit)",
-  "chart.delta": "ΔE_s = {value} V",
   "chart.aria": "Wykres woltamperometrii cyklicznej dla {name}, werdykt {verdict}.",
 
   "details.summary": "Szczegóły",
@@ -891,7 +927,7 @@ const PL = {
   "table.file": "Plik",
   "table.quality": "Jakość",
   "table.verdict": "Werdykt",
-  "table.delta": "ΔE_s",
+  "table.delta": "δΔE",
   "table.err": "Odchyłka mV",
   "table.ip": "Ip analitu",
   "table.version": "Wersja",
@@ -965,7 +1001,7 @@ const PL = {
   "versions.note":
     "Wersja i SHA-256 pochodzą z algo/versions.json. Liczby zmierzone 16.09.2026: wykryto 121 z 293 plików pozytywnych, fałszywie wykryto 0 ze 147 plików negatywnych i 0 z 45 neutralnych.",
   "versions.diff":
-    "1.1 = 1.0 + diagnostyka (LOD/LOQ z aktywnej kalibracji, ostrzeżenie below_lod, diagnostyka wyboru pary); identyczne werdykty, ΔE_s i Ip na 485 plikach testowych.",
+    "1.1 = 1.0 + diagnostyka (LOD/LOQ z aktywnej kalibracji, ostrzeżenie below_lod, diagnostyka wyboru pary); identyczne werdykty, δΔE i Ip na 485 plikach testowych.",
   "versions.col.version": "Wersja",
   "versions.col.date": "Data",
   "versions.col.sha": "SHA-256",
@@ -1026,7 +1062,7 @@ const PL = {
 
   "peaks.title": "Piki",
   "peaks.col.n": "#",
-  "peaks.col.meaning": "Znaczenie",
+  "peaks.col.meaning": "Symbol",
   "peaks.col.e": "E (V)",
   "peaks.col.i": "I (µA)",
   "peaks.col.type": "Typ",
@@ -1038,12 +1074,14 @@ const PL = {
   "peaks.redetect": "Wykryj ponownie",
   "peaks.edit": "Edytuj piki",
   "peaks.editOff": "Zakończ edycję",
-  "peaks.meaning.1": "minimum TPrA (wzorzec−)",
-  "peaks.meaning.2": "maksimum TPrA (wzorzec+)",
-  "peaks.meaning.3": "minimum analitu",
-  "peaks.meaning.4": "maksimum analitu",
-  "peaks.meaning.5": "TPrA, środek pary",
-  "peaks.meaning.6": "analit, środek pary",
+  "peaks.meaning.1": "Potencjał piku ujemnego TPrA⁺ (punkt 1): jon wzorca wraca z fazy organicznej do wodnej podczas skanu wstecz.",
+  "peaks.meaning.2": "Potencjał piku dodatniego TPrA⁺ (punkt 2): jon wzorca przechodzi z fazy wodnej do organicznej podczas skanu w przód.",
+  "peaks.meaning.3": "Potencjał piku ujemnego kationu analitu A⁺ (punkt 3): powrót z fazy organicznej do wodnej podczas skanu wstecz.",
+  "peaks.meaning.4": "Potencjał piku dodatniego kationu analitu A⁺ (punkt 4): przejście z fazy wodnej do organicznej podczas skanu w przód.",
+  "peaks.meaning.5": "Formalna różnica potencjałów Galvaniego przejścia TPrA⁺ (E5), środek punktów 1 i 2. Kalibracja przesuwa oś tak, żeby E5 wynosiło −0,091 V, czyli wartość literaturową dla przejścia TPrA⁺ przez granicę woda||1,2-DCE.",
+  "peaks.meaning.6": "Formalna różnica potencjałów Galvaniego przejścia A⁺ (E6), środek punktów 3 i 4. Werdykt opiera się na δΔE = E6 − E5, dla amfetaminy około 0,350 V.",
+  "peaks.meaning.5raw": "Potencjał półfali TPrA⁺ (E5), środek punktów 1 i 2, w skali aparatu przed kalibracją.",
+  "peaks.meaning.6raw": "Potencjał półfali A⁺ (E6), środek punktów 3 i 4, w skali aparatu przed kalibracją. δΔE = E6 − E5 nie zależy od kalibracji.",
   "peaks.addAnalyte": "Dodaj parę analitu",
   "peaks.addStandard": "Wskaż wzorzec ręcznie",
 
@@ -1055,7 +1093,7 @@ const PL = {
 
   "params.thresholds": "Progi tej wersji algorytmu",
   "params.tpraTarget": "Okno wzorca TPrA",
-  "params.amphTarget": "Kryterium ΔE_s dla amfetaminy",
+  "params.amphTarget": "Kryterium δΔE dla amfetaminy",
   "params.tolerance": "Tolerancja wykrycia / do oceny",
   "params.prominence": "Prominencja piku",
   "params.weak": "Kandydaci słabych pików",
@@ -1072,7 +1110,7 @@ const PL = {
   "analysisParams.customState": "Własne w tej sesji (poza walidacją)",
   "analysisParams.detected": "Tolerancja WYKRYTO",
   "analysisParams.review": "Tolerancja DO OCENY",
-  "analysisParams.target": "ΔE_s wzorca amfetaminy",
+  "analysisParams.target": "δΔE wzorca amfetaminy",
   "analysisParams.forward": "Okno TPrA+ na forward",
   "analysisParams.reverse": "Okno TPrA− na powrocie",
   "analysisParams.from": "od",
@@ -1120,12 +1158,12 @@ const PL = {
   "analysisParams.errorDetectedRange": "Tolerancja WYKRYTO musi mieścić się w zakresie 1 do 30 mV.",
   "analysisParams.errorReviewRange":
     "Tolerancja DO OCENY musi być nie mniejsza niż tolerancja WYKRYTO i nie większa niż 30 mV.",
-  "analysisParams.errorTargetRange": "ΔE_s wzorca musi mieścić się w zakresie 0,300 do 0,400 V.",
+  "analysisParams.errorTargetRange": "δΔE wzorca musi mieścić się w zakresie 0,300 do 0,400 V.",
   "analysisParams.errorWindowRange": "Granice okna muszą mieścić się w zakresie -1,0 do 1,0 V.",
   "analysisParams.errorWindowWidth": "Okno musi mieć szerokość co najmniej 0,05 V.",
 
   "params.bar":
-    "Parametry własne: tolerancja {detected}/{review} mV, ΔE_s {target} V. Wyniki poza walidacją z 16.09.2026.",
+    "Parametry własne: tolerancja {detected}/{review} mV, δΔE {target} V. Wyniki poza walidacją z 16.09.2026.",
   "params.barLabel": "Własne parametry analizy",
 
   "progress.abort": "Przerwij",
@@ -1232,6 +1270,10 @@ const PL = {
 
   "print.session": "Sesja: {name}",
 
+  "app.changelog.1_4_2":
+    "2026-10-25: odległość między środkami dwóch par nazywa się δΔE, jak w manuskrypcie (wcześniej ΔE_s). Na wykresie jest złożona jak wzór, z δ i E kursywą. Nazwy kolumn w CSV się nie zmieniają.",
+  "app.changelog.1_4_1":
+    "2026-10-25: panel Piki pokazuje punkty 1 do 4 oraz E5 i E6 zapisem z publikacji zespołu Electrochemistry@Soft Interfaces (UŁ): E⁺ i E⁻ to potencjały piku dodatniego i ujemnego TPrA⁺ oraz kationu analitu A⁺, a Δ_org^aq Φ′ to formalna różnica potencjałów Galvaniego przejścia jonu. Najechanie na symbol objaśnia go słowami. Parametry pomiaru i historia analizy są na razie ukryte na ekranie wyniku; metadane pliku zostają, a eksporty i raport się nie zmieniają.",
   "app.changelog.1_2_0":
     "2026-09-16: przebudowany ekran wyniku: nagłówek pliku z metadanymi, cztery karty KPI, duży opisany wykres z zoomem i pełnym ekranem, panel pików, drzewo folderów i próbek z kropkami statusu, zwijane parametry, historia i metadane. PeakWise 1.0 dodany do huba.",
   "app.changelog.1_4_0":

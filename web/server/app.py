@@ -13,7 +13,7 @@ from urllib.parse import urlsplit
 
 from flask import Flask, Response, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask.sessions import SecureCookieSessionInterface
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = ROOT / "static"
@@ -30,6 +30,21 @@ LOGIN_KEYS = (
     "login.submit",
     "login.invalid",
     "login.rateLimited",
+    "login.forget",
+    "login.changed",
+    "password.pageTitle",
+    "password.title",
+    "password.who",
+    "password.current",
+    "password.new",
+    "password.repeat",
+    "password.submit",
+    "password.back",
+    "password.hint",
+    "password.wrongCurrent",
+    "password.tooShort",
+    "password.mismatch",
+    "password.same",
     "login.by",
 )
 
@@ -202,6 +217,7 @@ def _login_response(lang: str, error_key: str | None = None, status: int = 200) 
                 copy=LOGIN_COPY[lang],
                 lang=lang,
                 error_key=error_key,
+                changed=request.args.get("changed") == "1",
                 next_path=_safe_next(request.values.get("next")),
             ),
             status,
@@ -230,9 +246,11 @@ def _is_protected(path: str) -> bool:
 def require_login():
     if request.path in PUBLIC_PATHS or not _is_protected(request.path):
         return None
-    if session.get("user") in AUTH_CONFIG["users"]:
+    stored = AUTH_CONFIG["users"].get(session.get("user", ""))
+    if stored and session.get("pv") == stored[-12:]:
         session.permanent = True
         return None
+    session.clear()
     return redirect(url_for("login", next=request.full_path.rstrip("?")))
 
 
@@ -263,8 +281,67 @@ def login():
     _clear_login_failures(address)
     session.clear()
     session["user"] = username
+    # A slice of the stored hash travels in the cookie, so changing the password ends
+    # every session that was opened with the old one.
+    session["pv"] = stored_hash[-12:]
     session.permanent = True
     return redirect(_safe_next(request.form.get("next")))
+
+
+MIN_PASSWORD_LENGTH = 10
+
+
+def _write_new_password(user: str, password: str) -> None:
+    """Rewrite the credentials file in place, atomically, keeping every other field."""
+    data = json.loads(AUTH_FILE.read_text(encoding="utf-8"))
+    data.setdefault("users", {})[user] = generate_password_hash(password)
+    tmp = AUTH_FILE.with_name(AUTH_FILE.name + f".{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.chmod(tmp, 0o600)
+    os.replace(tmp, AUTH_FILE)
+    AUTH_CONFIG["users"] = data["users"]
+
+
+@app.route("/password", methods=("GET", "POST"))
+def password_page():
+    lang = _language()
+    user = session.get("user", "")
+    stored = AUTH_CONFIG["users"].get(user)
+    if not stored or session.get("pv") != stored[-12:]:
+        session.clear()
+        return redirect(url_for("login", next="/password"))
+
+    back = _safe_next(request.values.get("next")) or "/"
+    error_key = None
+    if request.method == "POST":
+        current = request.form.get("current", "")
+        fresh = request.form.get("fresh", "")
+        repeat = request.form.get("repeat", "")
+        if not check_password_hash(stored, current):
+            error_key = "password.wrongCurrent"
+            app.logger.warning("Password change refused for %s: wrong current password", user)
+        elif len(fresh) < MIN_PASSWORD_LENGTH:
+            error_key = "password.tooShort"
+        elif fresh != repeat:
+            error_key = "password.mismatch"
+        elif fresh == current:
+            error_key = "password.same"
+        else:
+            _write_new_password(user, fresh)
+            app.logger.info("Password changed for %s", user)
+            session.clear()
+            return redirect(url_for("login", changed=1))
+
+    return app.make_response(
+        render_template(
+            "password.html",
+            copy=LOGIN_COPY[lang],
+            lang=lang,
+            user=user,
+            back=back,
+            error_key=error_key,
+        )
+    )
 
 
 @app.get("/logout")
