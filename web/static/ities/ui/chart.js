@@ -1,5 +1,6 @@
 import uPlot from "/vendor/uplot/uPlot.esm.js";
 import { t } from "/shared/i18n.js";
+import { FONT_STACK, drawRuns, runFont, runsWidth } from "/shared/typeset.js";
 import { fmtNum, verdictInfo } from "./format.js";
 import { peakSymbolRuns } from "./symbols.js";
 
@@ -11,8 +12,6 @@ import { peakSymbolRuns } from "./symbols.js";
 // as real text (headerMode "dom"), so it reads like the rest of the interface. For the
 // printed report the same chart paints its own title and legend on the canvas
 // (headerMode "canvas"), so the exported PNG stands on its own.
-
-const FONT_STACK = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif';
 
 const TITLE_BAND = 30; // CSS px reserved above the plot in canvas header mode
 const LEGEND_ROW = 18; // CSS px per legend row in canvas header mode
@@ -126,43 +125,8 @@ export function annotationLegend(result, calibrated) {
 }
 
 // Pack the legend into centred rows, the way finish_cv_plot lays it out under the axes.
-// Widths are device pixels because uPlot draws on an unscaled canvas.
-// Runs on a canvas: plain or italic text, and stacks of a superscript over a subscript,
-// so a legend entry can carry the same symbol as the Peaks panel.
-function runFont(size, italic) {
-  return `${italic ? "italic " : ""}600 ${Math.round(size)}px ${FONT_STACK}`;
-}
-
-function runsWidth(ctx, runs, size) {
-  let width = 0;
-  for (const run of runs) {
-    if (run.sup != null || run.sub != null) {
-      ctx.font = runFont(size * 0.7, false);
-      width += Math.max(ctx.measureText(run.sup || "").width, ctx.measureText(run.sub || "").width) + size * 0.1;
-    } else {
-      ctx.font = runFont(size, run.italic);
-      width += ctx.measureText(run.text).width;
-    }
-  }
-  return width;
-}
-
-function drawRuns(ctx, runs, x, y, size) {
-  for (const run of runs) {
-    if (run.sup != null || run.sub != null) {
-      ctx.font = runFont(size * 0.7, false);
-      const w = Math.max(ctx.measureText(run.sup || "").width, ctx.measureText(run.sub || "").width);
-      if (run.sup) ctx.fillText(run.sup, x + size * 0.05, y - size * 0.34);
-      if (run.sub) ctx.fillText(run.sub, x + size * 0.05, y + size * 0.3);
-      x += w + size * 0.1;
-    } else {
-      ctx.font = runFont(size, run.italic);
-      ctx.fillText(run.text, x, y);
-      x += ctx.measureText(run.text).width;
-    }
-  }
-}
-
+// Widths are device pixels because uPlot draws on an unscaled canvas. Entries with runs
+// (shared/typeset.js) carry the same symbol as the Peaks panel.
 function packLegend(items, maxWidth, ratio) {
   const swatch = 20 * ratio;
   const gap = 6 * ratio;

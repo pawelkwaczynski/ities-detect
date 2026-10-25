@@ -12,25 +12,7 @@
 // Before calibration the axis is the instrument's, not the Galvani scale, so E5 and E6
 // are shown as half-wave potentials, E^{1/2}_{\mathrm{TPrA}^{+}} and E^{1/2}_{\mathrm{A}^{+}}.
 
-const NS = "http://www.w3.org/1998/Math/MathML";
-
-function m(tag, text, attrs) {
-  const node = document.createElementNS(NS, tag);
-  if (text != null) node.textContent = text;
-  for (const [name, value] of Object.entries(attrs || {})) node.setAttribute(name, value);
-  return node;
-}
-
-function wrap(tag, ...children) {
-  const node = m(tag);
-  node.append(...children);
-  return node;
-}
-
-// A single letter in <mi> is italic by default; names of ions and phases stay upright.
-function upright(text) {
-  return m("mi", text, { mathvariant: "normal" });
-}
+import { m, upright, wrap } from "/shared/typeset.js";
 
 function ion(tone) {
   return wrap("msup", upright(tone === "tpra" ? "TPrA" : "A"), m("mo", "+"));
