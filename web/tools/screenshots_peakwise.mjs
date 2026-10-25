@@ -32,7 +32,12 @@ const PORT = Number(process.env.PW_SHOT_CDP_PORT || 9224);
 // signs in with its throwaway account, so it never needs the owner's server.
 const OWN_SERVER = !!process.env.ITIES_TEST_PORT;
 const BASE = `http://127.0.0.1:${process.env.ITIES_TEST_PORT || 20412}`;
-const HURNY = "/Users/pawelkwaczynski/Desktop/claude_brain/projekty/HURNY";
+// folder with the lab data, kept outside the repository
+const LAB_DIR = process.env.PEAKWISE_DATA_DIR;
+if (!LAB_DIR) {
+  console.error("set PEAKWISE_DATA_DIR to the folder with the lab data");
+  process.exit(2);
+}
 // Its own staging directory: screenshots/.files belongs to tools/screenshots.mjs.
 const STAGE = path.join(OUT, ".peakwise-files");
 
@@ -49,7 +54,7 @@ fs.mkdirSync(STAGE, { recursive: true });
 
 const FILES = [];
 for (const rel of SOURCES) {
-  const dir = path.join(HURNY, rel);
+  const dir = path.join(LAB_DIR, rel);
   for (const name of fs.readdirSync(dir)) {
     const src = path.join(dir, name);
     if (!fs.statSync(src).isFile() || name.endsWith(".png")) continue;

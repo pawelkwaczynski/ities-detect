@@ -29,7 +29,12 @@ const ROOT = path.resolve(HERE, "..");
 const CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 const CDP_PORT = Number(process.env.PW_SMOKE_CDP_PORT || 9226);
 const TEST_PORT = Number(process.env.ITIES_TEST_PORT || 20414);
-const HURNY = "/Users/pawelkwaczynski/Desktop/claude_brain/projekty/HURNY";
+// folder with the lab data, kept outside the repository
+const LAB_DIR = process.env.PEAKWISE_DATA_DIR;
+if (!LAB_DIR) {
+  console.error("set PEAKWISE_DATA_DIR to the folder with the lab data");
+  process.exit(2);
+}
 // The same source directory tools/screenshots_peakwise.mjs uses, first three scans.
 const SOURCE = "SPE iterations/LEYER HEIGHT/0,24/0,24 A";
 const WORK = path.join(ROOT, "screenshots", ".peakwise-smoke");
@@ -42,7 +47,7 @@ const results = [];
 function stageFiles() {
   fs.rmSync(WORK, { recursive: true, force: true });
   fs.mkdirSync(WORK, { recursive: true });
-  const dir = path.join(HURNY, SOURCE);
+  const dir = path.join(LAB_DIR, SOURCE);
   const staged = [];
   for (const name of fs.readdirSync(dir).sort()) {
     if (staged.length === 3) break;
