@@ -223,6 +223,7 @@ tar -cf - \
   --exclude='deploy/analizatory_bundle*.tar.gz' \
   server algo static assets/partners README.md RELEASE_CHECK.md RELEASE_CHECK_PEAKWISE.md deploy \
   | tar -xf - -C "$STAGE"
+python3 "$ROOT/tools/strip_work_notes.py" "$STAGE/static"
 python3 "$ROOT/tools/stamp_versions.py" "$STAGE/static"
 
 rm -f "$BUNDLE"

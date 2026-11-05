@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 
 from flask import Flask, Response, jsonify, redirect, render_template, request, send_file, session, url_for
 from flask.sessions import SecureCookieSessionInterface
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -148,6 +149,8 @@ app.config.update(
     SESSION_COOKIE_SAMESITE="Lax",
 )
 app.session_interface = ProxyAwareSessionInterface()
+# Redirects built by the router (/ities to /ities/) keep the https the visitor came in on.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=0, x_proto=1, x_host=0)
 
 _login_attempts: dict[str, dict[str, float | int]] = {}
 _login_attempts_lock = threading.Lock()
@@ -239,7 +242,29 @@ def _login_response(lang: str, error_key: str | None = None, status: int = 200) 
 
 
 def _is_protected(path: str) -> bool:
-    return path == "/" or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES)
+    return path in ("/", "/index.html") or any(path.startswith(prefix) for prefix in PROTECTED_PREFIXES)
+
+
+# Modules no ITIES Detect screen needs, holding text meant for full accounts.
+SCOPED_HIDDEN = {"/shared/full_account.js", "/shared/backlink.js"}
+
+
+def _account_scope() -> str | None:
+    """The one application this account is limited to, None for a full account."""
+    scope = (AUTH_CONFIG.get("user_scope") or {}).get(session.get("user", ""))
+    return scope if scope == "ities" else None
+
+
+def _enforce_scope():
+    if _account_scope() is None:
+        return None
+    path = request.path
+    # The version history is the project's own record, not part of what a reviewer tests.
+    if path in ("/", "/index.html", "/ities/versions.html"):
+        return redirect("/ities/")
+    if path in SCOPED_HIDDEN or path == "/peakwise" or path.startswith(("/peakwise/", "/algo/peakwise")):
+        return Response("Not found", status=404)
+    return None
 
 
 @app.before_request
@@ -249,7 +274,7 @@ def require_login():
     stored = AUTH_CONFIG["users"].get(session.get("user", ""))
     if stored and session.get("pv") == stored[-12:]:
         session.permanent = True
-        return None
+        return _enforce_scope()
     session.clear()
     return redirect(url_for("login", next=request.full_path.rstrip("?")))
 
@@ -317,6 +342,11 @@ def password_page():
     if not stored or session.get("pv") != stored[-12:]:
         session.clear()
         return redirect(url_for("login", next="/password"))
+
+    # A scoped account can be shared (the journal reviewers), so nobody using it may
+    # change the password under the others.
+    if _account_scope() is not None:
+        return redirect("/ities/")
 
     back = _safe_next(request.values.get("next")) or "/"
     error_key = None
@@ -427,7 +457,16 @@ def hub():
 
 @app.get("/ities/")
 def ities_index():
-    return send_precompressed(STATIC / "ities" / "index.html", cache="no-cache")
+    path = STATIC / "ities" / "index.html"
+    scope = _account_scope()
+    if scope is None:
+        return send_precompressed(path, cache="no-cache")
+    # The page has to know before its first paint, so the mark travels in the HTML.
+    html = path.read_text(encoding="utf-8").replace("<html", f'<html data-account-scope="{scope}"', 1)
+    response = Response(html, mimetype="text/html")
+    response.headers["Cache-Control"] = "private, no-store"
+    return response
+
 
 
 @app.get("/peakwise/")

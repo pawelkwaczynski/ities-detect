@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, "..");
 const DICT = path.join(ROOT, "static/shared/i18n.js");
+const DICT_FULL = path.join(ROOT, "static/shared/full_account.js");
 const OUT = path.join(ROOT, "tools/_i18n_check_last.json");
 const SCAN = [
   path.join(ROOT, "static/ities"),
@@ -151,9 +152,14 @@ function usedKeys(files) {
 }
 
 function main() {
-  const source = fs.readFileSync(DICT, "utf8");
-  const enDictionary = dictKeys(source, "EN");
-  const plDictionary = dictKeys(source, "PL");
+  const merged = (name) => {
+    const parts = [DICT, DICT_FULL].map((file) => dictKeys(fs.readFileSync(file, "utf8"), name));
+    const keys = new Set(parts.flatMap((part) => [...part.keys]));
+    const repeated = [...parts[0].keys].filter((key) => parts[1].keys.has(key));
+    return { keys, duplicates: [...parts[0].duplicates, ...parts[1].duplicates, ...repeated] };
+  };
+  const enDictionary = merged("EN");
+  const plDictionary = merged("PL");
   const en = enDictionary.keys;
   const pl = plDictionary.keys;
   const files = [];

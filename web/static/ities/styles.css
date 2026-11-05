@@ -2190,7 +2190,8 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
 .guide-close {
   position: fixed;
   right: 16px;
-  bottom: 16px;
+  /* Above the footer, whose links stay usable while the guide is on. */
+  bottom: 72px;
   pointer-events: auto;
   border: 2px solid var(--guide);
   color: var(--guide);
@@ -2206,3 +2207,6 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.34); }
 
 /* Legend entries for points 1 to 4, E5 and E6 carry the same symbols as the Peaks panel. */
 .legend-symbol .peak-symbol { font-size: 1.08em; color: inherit; }
+
+/* An account limited to this application sees no way out of it. */
+html[data-account-scope] .full-account-only { display: none !important; }

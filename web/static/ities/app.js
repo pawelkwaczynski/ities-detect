@@ -44,8 +44,9 @@ import {
   SESSION_FILE_WARN_BYTES,
 } from "./ui/session.js";
 
-export const APP_VERSION = "1.4.5";
+export const APP_VERSION = "1.4.7";
 export const APP_CHANGELOG_KEYS = [
+  "app.changelog.1_4_7",
   "app.changelog.1_4_5",
   "app.changelog.1_4_4",
   "app.changelog.1_4_3",
@@ -328,8 +329,10 @@ function paintAlgoInfo() {
   const text = algoInfoText(entry);
   if (text) button.dataset.tooltipText = text;
   else delete button.dataset.tooltipText;
-  button.dataset.tooltipLinkHref = "/ities/versions.html";
-  button.dataset.tooltipLinkKey = "common.versions";
+  if (!document.documentElement.dataset.accountScope) {
+    button.dataset.tooltipLinkHref = "/ities/versions.html";
+    button.dataset.tooltipLinkKey = "common.versions";
+  }
   button.hidden = !entry;
 }
 

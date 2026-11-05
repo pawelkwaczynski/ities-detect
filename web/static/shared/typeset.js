@@ -1,4 +1,4 @@
-// Typesetting shared by ITIES Detect and PeakWise: symbols of quantities as MathML for the
+// Typesetting shared by the analysers: symbols of quantities as MathML for the
 // page and as runs for the canvas. Quantities are italic; operators, labels in subscripts
 // and units stay upright, as IUPAC sets them. Each app keeps its own symbols in
 // ui/symbols.js and builds them from these pieces.

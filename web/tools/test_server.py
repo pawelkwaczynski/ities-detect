@@ -26,6 +26,7 @@ AUTH_FILE.write_text(
                 TEST_REVIEWER: generate_password_hash(TEST_PASSWORD),
             },
             "user_lang": {TEST_REVIEWER: "en"},
+            "user_scope": {TEST_REVIEWER: "ities"},
             "secret_key": secrets.token_hex(32),
         }
     ),
@@ -132,6 +133,48 @@ def main() -> int:
         data={"username": TEST_REVIEWER, "password": TEST_PASSWORD, "next": "/ities/"},
         environ_base={"REMOTE_ADDR": "127.0.0.30"},
     )
+    # The scoped account: only ITIES Detect, no hub, no PeakWise, no password change.
+    # The full account next to it proves each of these checks can tell the difference.
+    def scoped_client(user):
+        client = app.test_client()
+        client.post("/login", data={"username": user, "password": TEST_PASSWORD},
+                    environ_base={"REMOTE_ADDR": "127.0.0.31"})
+        return client
+    scoped = scoped_client(TEST_REVIEWER)
+    full = scoped_client(TEST_USER)
+    expected = (
+        ("/", 302, 200), ("/password", 302, 200), ("/peakwise/", 404, 200), ("/peakwise", 308, 308),
+        ("/algo/peakwise_versions.json", 404, 200), ("/algo/peakwise_algo_v1.1.py", 404, 200),
+        ("/peakwise/app.js", 404, 200), ("/ities/", 200, 200), ("/ities/versions.html", 302, 200),
+        ("/algo/versions.json", 200, 200), ("/ities/app.js", 200, 200),
+        ("/index.html", 302, 200), ("/shared/full_account.js", 404, 200), ("/shared/backlink.js", 404, 200),
+        ("/shared/i18n.js", 200, 200), ("/shared/appswitch.js", 200, 200),
+    )
+    for path, want_scoped, want_full in expected:
+        got_scoped = scoped.get(path).status_code
+        got_full = full.get(path).status_code
+        if got_scoped != want_scoped or got_full != want_full:
+            fails.append(f"scope {path}: scoped {got_scoped}/{want_scoped}, full {got_full}/{want_full}")
+    if scoped.get("/").headers.get("Location") != "/ities/":
+        fails.append("scoped account: / does not lead to /ities/")
+    for path in ("/ities/",):
+        page_scoped = scoped.get(path)
+        page_full = full.get(path)
+        page_full.direct_passthrough = False
+        if b'data-account-scope="ities"' not in page_scoped.data:
+            fails.append(f"scoped account: {path} carries no scope mark")
+        if b"data-account-scope" in page_full.data:
+            fails.append(f"full account: {path} carries a scope mark")
+        if "no-store" not in page_scoped.headers.get("Cache-Control", ""):
+            fails.append(f"scoped account: {path} may be cached")
+    redirected = full.get("/ities", headers={"X-Forwarded-Proto": "https"}, base_url="http://example.test")
+    if not redirected.headers.get("Location", "").startswith("https://"):
+        fails.append(f"/ities redirect drops https: {redirected.headers.get('Location')}")
+    anonymous_hub = app.test_client().get("/index.html")
+    if anonymous_hub.status_code != 302:
+        fails.append(f"anonymous /index.html answered {anonymous_hub.status_code}")
+    print("scoped account: checks done")
+
     rc = lang_cookie(reviewer)
     if reviewer.status_code != 302 or not rc or not rc.startswith("analizatory-lang=en;"):
         fails.append(f"reviewer login did not set the English language cookie: {reviewer.status_code} {rc!r}")
@@ -249,9 +292,9 @@ def main() -> int:
     if b'href="/peakwise/"' not in hub.data or b"hub.soon" in hub.data:
         fails.append("hub PeakWise tile is unavailable or still marked soon")
 
-    i18n = c.get("/shared/i18n.js")
+    i18n = c.get("/shared/full_account.js")
     if i18n.status_code != 200:
-        fails.append(f"/shared/i18n.js status {i18n.status_code}")
+        fails.append(f"/shared/full_account.js status {i18n.status_code}")
     else:
         for key in (b'"hub.title"', b'"hub.ities.desc"', b'"hub.peakwise.desc"'):
             if i18n.data.count(key) != 2:
