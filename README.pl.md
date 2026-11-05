@@ -54,8 +54,8 @@ czułość i swoistość, przegląd progów, sprawdzenie wobec literatury.
 
 ## Czego to nie robi
 
-- **Nie zawiera danych pomiarowych ani laboratoryjnych stałych kalibracyjnych.** One nie są częścią
-  tego repozytorium i nie zostaną tu dodane.
+- **Nie zawiera danych pomiarowych.** Nie są częścią tego repozytorium i nie zostaną tu dodane.
+  Dopasowane wartości kalibracji, których używają skrypty, są w `kalibracja_amfetamina.json`.
 - Nie zastępuje analityka. Przypadki graniczne mają trafić do ręcznej kontroli, od tego jest
   `kontrola_wizualna`.
 - Nie jest wyrobem medycznym ani narzędziem dowodowym.

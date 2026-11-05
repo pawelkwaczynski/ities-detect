@@ -10,4 +10,4 @@ Companion scripts: calibration fit (`kalibracja_cc.py`), quantitation and purity
 
 `docs/analizy_2026-09/` holds the September evaluation against the lab-labelled set (sensitivity/specificity, threshold sweeps, literature check).
 
-Measurement data and the laboratory calibration constants are not part of this repository. Work in progress with the Electrochemistry@Soft Interfaces group, University of Łódź.
+Measurement data are not part of this repository. `kalibracja_amfetamina.json` holds the fitted calibration values the scripts use. Work in progress with the Electrochemistry@Soft Interfaces group, University of Łódź.
